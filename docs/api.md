@@ -25,7 +25,11 @@
    - 3.11 [修改考试](#311-post-examobject)
    - 3.12 [删除考试](#312-delete-examobject)
    - 3.13 [切换考试阶段](#313-post-examstage)
-   - 3.14 [创建教师账号](#314-post-adminteachercreate)
+   - 3.14 [创建试卷](#314-post-papercreate)
+   - 3.15 [试卷列表](#315-get-paperlist)
+   - 3.16 [试卷详情](#316-get-paperobject)
+   - 3.17 [保存试卷内容](#317-post-paperobject)
+   - 3.18 [创建教师账号](#318-post-adminteachercreate)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -841,7 +845,268 @@ curl -X POST http://localhost:8088/exam/stage \
 
 ---
 
-### 3.14 POST /admin/teacher/create
+### 3.14 POST /paper/create
+
+创建新试卷（空白）。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且考试须处于 `preparing` 阶段。
+
+#### 请求体
+
+```json
+{
+  "examId": 19345678,
+  "title": "第一单元测验"
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `examId` | integer | 是 | 考试展示 ID（9 位数字） |
+| `title` | string | 是 | 试卷标题 |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "id": 23456789
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | integer | 试卷展示 ID（9 位数字） |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式问题 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
+| 404 | - | `{}` | 考试不存在 |
+| 409 | - | `{}` | 考试不在 preparing 阶段 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X POST http://localhost:8088/paper/create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"examId": 19345678, "title": "第一单元测验"}'
+```
+
+---
+
+### 3.15 GET /paper/list
+
+获取指定考试下的所有试卷基本信息列表。
+
+> **需要认证：** 需登录。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `examId` | integer | 是 | 考试展示 ID（9 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "objects": [
+    {
+      "id": 23456789,
+      "examId": 19345678,
+      "title": "第一单元测验",
+      "stage": "opening",
+      "createdAt": 1712345678000
+    }
+  ],
+  "count": 1
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `objects` | array | 试卷摘要数组 |
+| `objects[].id` | integer | 试卷展示 ID |
+| `objects[].examId` | integer | 所属考试 ID |
+| `objects[].title` | string | 试卷标题 |
+| `objects[].stage` | string | 试卷阶段 |
+| `objects[].createdAt` | integer | 创建时间（毫秒时间戳） |
+| `count` | integer | 试卷数量 |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/paper/list?examId=19345678" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.16 GET /paper/object
+
+获取指定试卷的完整信息（含题目和答案）。
+
+> **需要认证：** 需登录。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 试卷展示 ID（9 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 23456789,
+    "examId": 19345678,
+    "title": "第一单元测验",
+    "questions": [
+      {
+        "type": "obj.ssq",
+        "content": "1+1=?",
+        "options": ["1", "2", "3", "4"],
+        "score": 5
+      }
+    ],
+    "answers": [1],
+    "stage": "opening",
+    "createdAt": 1712345678000
+  }
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `questions` | array | 题目数组（各题型字段不同，经 PaperContent 清洗后输出） |
+| `answers` | array | 答案数组（与 questions 一一对应） |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 404 | - | `{}` | 试卷不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/paper/object?id=23456789" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.17 POST /paper/object
+
+覆盖保存试卷的题目和答案。每次调用会完全替换原有的题目和答案数组。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且考试须处于 `preparing` 阶段。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 试卷展示 ID（9 位数字） |
+
+#### 请求体
+
+```json
+{
+  "questions": [
+    {
+      "type": "obj.ssq",
+      "content": "1+1=?",
+      "options": ["1", "2", "3", "4"],
+      "score": 5
+    }
+  ],
+  "answers": [1]
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `questions` | array | 是 | 题目数组，每项须含 `type` 字段（题型标识），其余字段因题型而异 |
+| `answers` | array | 是 | 答案数组，与 `questions` 一一对应 |
+
+#### 题型及 type 标识
+
+| type | 题型 | 题目字段 | 答案格式 |
+|------|------|---------|---------|
+| `obj.ssq` | 单选题 | `content`, `options`(数组), `score` | `integer`（正确选项索引） |
+| `obj.msq` | 多选题 | `content`, `options`(数组), `score`, `partial`, `strict` | `integer[]`（正确选项索引数组） |
+| `obj.fib` | 客观填空 | `content`, `blanks`(数组) | `string[]`（每空答案） |
+| `sbj.fib` | 主观填空 | `content`, `blanks`(数组) | `string[]`（每空答案） |
+| `sbj.saq` | 简答题 | `content`, `full` | `string`（答案文本） |
+
+题目和答案会经过 `PaperContent` 校验，格式错误或字段不合法时拒绝保存。
+
+#### 成功响应（200）
+
+返回完整的试卷详情（同 GET /paper/object 格式）。
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 23456789,
+    "examId": 19345678,
+    "title": "第一单元测验",
+    "questions": [...],
+    "answers": [...],
+    "stage": "opening",
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失、题目或答案格式校验不通过 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
+| 404 | - | `{}` | 试卷不存在 |
+| 409 | - | `{}` | 考试不在 preparing 阶段 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X POST "http://localhost:8088/paper/object?id=23456789" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"questions": [{"type": "obj.ssq", "content": "1+1=?", "options": ["1","2","3","4"], "score": 5}], "answers": [1]}'
+```
+
+---
+
+### 3.18 POST /admin/teacher/create
 
 创建教师账号（管理员专用）。
 
@@ -962,7 +1227,20 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 | `created_at` | timestamp | 创建时间 |
 | `updated_at` | timestamp | 更新时间 |
 
-### 5.4 邀请码（InviteCode）
+### 5.4 试卷（Paper）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | integer | 自增主键 |
+| `exam_id` | integer | 所属考试 ID（外键关联 Exam） |
+| `title` | varchar(64) | 试卷标题 |
+| `questions` | jsonb | 题目数组（经 PaperContent 清洗后存储） |
+| `answers` | jsonb | 答案数组（与 questions 一一对应） |
+| `stage` | varchar(16) | 试卷阶段 |
+| `created_at` | timestamp | 创建时间 |
+| `updated_at` | timestamp | 更新时间 |
+
+### 5.5 邀请码（InviteCode）
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -970,7 +1248,7 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 | `expiresAt` | timestamp | 过期时间 |
 | 有效期 | - | 默认 7 天（可通过 `codeDays` 参数自定义） |
 
-### 5.5 角色枚举
+### 5.6 角色枚举
 
 | 角色 | 值 | 说明 |
 |------|-----|------|
@@ -978,7 +1256,7 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 | 教师 | `teacher` | 通过管理员创建 |
 | 管理员 | `admin` | 系统初始化时通过环境变量创建 |
 
-### 5.6 考试阶段枚举
+### 5.7 考试阶段枚举
 
 | 阶段 | 值 | 说明 |
 |------|-----|------|
@@ -987,7 +1265,7 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 | 批改中 | `grading` | 考试结束，阅卷中 |
 | 已归档 | `archived` | 考试归档，不可修改 |
 
-### 5.7 展示 ID（DisplayableId）
+### 5.8 展示 ID（DisplayableId）
 
 展示 ID 是对自增主键进行 Feistel 加密后附加校验码生成的 9 位数字，用于对外暴露时隐藏真实主键。
 
@@ -996,12 +1274,12 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 - **格式：** `C + encrypted(8位)` → 共 9 位数字
 - **密钥：** 通过环境变量 `DISPLAY_ID_KEY` 配置
 
-### 5.8 密码加密
+### 5.9 密码加密
 
 - **算法：** scrypt（随机 16 字节盐值，32 字节密钥长度）
 - **密码比较：** 使用 `timingSafeEqual` 防止时序攻击
 
-### 5.9 数据库表
+### 5.10 数据库表
 
 | 表名 | 说明 | 创建时机 |
 |------|------|---------|

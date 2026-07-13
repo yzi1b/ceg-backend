@@ -1,5 +1,6 @@
 import db from "../db.js";
 import ExamTable from "./ExamTable.js";
+import Paper from "../entities/Paper.js";
 
 const PaperTable = {
     name: 'papers',
@@ -35,6 +36,46 @@ const PaperTable = {
             table.timestamp(this.columns.CREATED_AT).notNullable();
             table.timestamp(this.columns.UPDATED_AT).notNullable();
         });
+    },
+
+    async createPaper(paper) {
+        const raw = paper.toRecord();
+        delete raw.id;
+        raw.created_at = new Date();
+        raw.updated_at = new Date();
+
+        raw[this.columns.QUESTIONS] = JSON.stringify(raw[this.columns.QUESTIONS]);
+        raw[this.columns.ANSWERS] = JSON.stringify(raw[this.columns.ANSWERS]);
+
+        const [newRaw] = await this.t().insert(raw).returning('*');
+
+        return Paper.fromRecord(newRaw);
+    },
+
+    async getPaperById(id) {
+        const raw = await this.t().where(this.columns.ID, id).first();
+        return raw ? Paper.fromRecord(raw) : null;
+    },
+
+    async listPapersByExamId(examId) {
+        const raws = await this.t().where({ [this.columns.EXAM_ID]: examId });
+        return raws.map(Paper.fromRecord);
+    },
+
+    async updatePaper(paper) {
+        const raw = paper.toRecord();
+        raw.updated_at = new Date();
+
+        // 显式序列化 jsonb 列，避免 pg 驱动误将数组当作 PG 数组处理
+        raw[this.columns.QUESTIONS] = JSON.stringify(raw[this.columns.QUESTIONS]);
+        raw[this.columns.ANSWERS] = JSON.stringify(raw[this.columns.ANSWERS]);
+
+        const [newRaw] = await this.t()
+            .where({ [this.columns.ID]: raw.id })
+            .update(raw)
+            .returning('*');
+
+        return Paper.fromRecord(newRaw);
     },
 };
 

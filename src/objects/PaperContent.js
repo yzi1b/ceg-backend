@@ -17,8 +17,7 @@ export default class PaperContent {
         QUESTION_PHASE_ERROR: 'question_phase_error',
     }
 
-    constructor(title, questions) {
-        this.title = title;
+    constructor(questions) {
         this.questions = questions;
     }
 
@@ -55,7 +54,7 @@ export default class PaperContent {
             }
         }
 
-        return new PaperContent(title, fq);
+        return new PaperContent(fq);
     }
 
     getFull() {

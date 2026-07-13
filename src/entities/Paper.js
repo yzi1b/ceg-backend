@@ -41,4 +41,33 @@ export default class Paper {
             updated_at: this.updatedAt,
         };
     }
+
+    static create(examId, title) {
+        return new Paper(
+            new DisplayableId(-1), examId, title,
+            [], [], Paper.Stage.OPENING, 0, 0
+        );
+    }
+
+    toJsonSummary() {
+        return {
+            id: this.id.toDisplay(),
+            examId: this.examId,
+            title: this.title,
+            stage: this.stage,
+            createdAt: this.createdAt instanceof Date ? this.createdAt.getTime() : this.createdAt,
+        };
+    }
+
+    toJsonDetail() {
+        return {
+            id: this.id.toDisplay(),
+            examId: this.examId,
+            title: this.title,
+            questions: this.questions,
+            answers: this.answers,
+            stage: this.stage,
+            createdAt: this.createdAt instanceof Date ? this.createdAt.getTime() : this.createdAt,
+        };
+    }
 }
