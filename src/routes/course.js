@@ -46,11 +46,11 @@ router.post('/create', authenticate, authorize(User.Role.TEACHER), async (req, r
     return res.status(200).send({code: 0, id: course.id.toDisplay()});
 });
 
-router.get('/list', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
+router.get('/list', authenticate, jwtToUser, async (req, res) => {
     let courses;
 
     try {
-        courses = await CourseService.list(req.user.id)
+        courses = await CourseService.list(req.user);
     } catch (e) {
         return res.status(500).send({});
     }

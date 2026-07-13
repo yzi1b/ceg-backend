@@ -77,6 +77,14 @@ const CourseTable = {
         const raw = await this.t().where(this.columns.INVITE_CODE, code).first();
         return raw ? Course.fromRecord(raw) : null;
     },
+
+    async listCoursesByStudent(studentId) {
+        const raws = await this.t()
+            .join('course_members', 'courses.id', 'course_members.course_id')
+            .where('course_members.student_id', studentId)
+            .select('courses.*');
+        return raws.map(Course.fromRecord);
+    },
 };
 
 export default CourseTable;

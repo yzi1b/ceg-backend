@@ -26,8 +26,12 @@ const CourseService = {
         return await CourseTable.createCourse(course);
     },
 
-    list: async function (owner) {
-        return await CourseTable.listCoursesByOwner(owner);
+    list: async function (visitor) {
+        if (visitor.role === User.Role.STUDENT) {
+            return await CourseTable.listCoursesByStudent(visitor.id);
+        }
+
+        return await CourseTable.listCoursesByOwner(visitor.id);
     },
 
     /**
@@ -202,8 +206,7 @@ const CourseService = {
         } else if (visitor.role === User.Role.TEACHER) {
             return course.owner === visitor.id;
         } else if (visitor.role === User.Role.STUDENT) {
-            // TODO 检查学生是否在课程内
-            return false;
+            return await CourseMemberTable.isMember(course.id.raw(), visitor.id);
         }
 
         return false;

@@ -4,6 +4,7 @@ import CourseTable from "../tables/CourseTable.js";
 import User from "../entities/User.js";
 import PaperTable from "../tables/PaperTable.js";
 import PaperContent from "../objects/PaperContent.js";
+import CourseMemberTable from "../tables/CourseMemberTable.js";
 
 const ExamService = {
     errors: {
@@ -246,8 +247,7 @@ const ExamService = {
         } else if (visitor.role === User.Role.TEACHER) {
             return course.owner === visitor.id;
         } else if (visitor.role === User.Role.STUDENT) {
-            // TODO 检查学生是否在课程内
-            return false;
+            return await CourseMemberTable.isMember(course.id.raw(), visitor.id);
         }
 
         return false;

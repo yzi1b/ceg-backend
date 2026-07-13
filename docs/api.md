@@ -402,9 +402,9 @@ curl -X POST http://localhost:8088/course/create \
 
 ### 3.6 GET /course/list
 
-获取当前教师创建的所有课程列表。
+获取当前用户的课程列表。教师返回自己创建的课程，学生返回自己加入的课程。
 
-> **需要认证：** 教师（`teacher`）及以上角色。
+> **需要认证：** 需登录。
 
 #### 查询参数
 
@@ -442,11 +442,15 @@ curl -X POST http://localhost:8088/course/create \
 | HTTP 状态码 | code | msg | 说明 |
 |-------------|------|-----|------|
 | 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
-| 403 | -1 | `permission required` | 权限不足（非 teacher） |
 
 #### 调用示例
 
 ```bash
+# 教师查看自己创建的课程
+curl -X GET http://localhost:8088/course/list \
+  -H "Authorization: Bearer <token>"
+
+# 学生查看自己加入的课程
 curl -X GET http://localhost:8088/course/list \
   -H "Authorization: Bearer <token>"
 ```
