@@ -75,7 +75,7 @@ router.post('/refresh', authenticate, async (req, res) => {
     return res.status(200).send({code: 0, token: AuthService.refresh(req.jwt)});
 });
 
-router.post('/changePassword', authenticate, async (req, res) => {
+router.post('/password', authenticate, async (req, res) => {
     if (!req.body) {
         return res.status(400).send({});
     }

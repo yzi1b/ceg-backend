@@ -293,7 +293,7 @@ curl -X POST http://localhost:8088/user/refresh \
 
 ---
 
-### 3.4 POST /user/changePassword
+### 3.4 POST /user/password
 
 修改当前登录用户的密码。
 
@@ -331,7 +331,7 @@ curl -X POST http://localhost:8088/user/refresh \
 #### 调用示例
 
 ```bash
-curl -X POST http://localhost:8088/user/changePassword \
+curl -X POST http://localhost:8088/user/password \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
   -d '{"oldPassword": "Pass1234", "newPassword": "NewPass5678"}'
