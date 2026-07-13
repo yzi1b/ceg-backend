@@ -800,7 +800,7 @@ curl -X DELETE "http://localhost:8088/exam/object?id=19345678" \
 
 | 切换 | 条件 |
 |------|------|
-| `preparing` → `opening` | 当前时间须在开始时间之前，否则需先延后开始时间 |
+| `preparing` → `opening` | 当前时间须在开始时间之前；至少有一份试卷；每份试卷至少有一个题目；各试卷满分之和须等于考试总分 |
 | `opening` → `grading` | 当前时间须已超过结束时间，否则拒绝 |
 | `grading` → `archived` | TODO |
 
@@ -828,6 +828,9 @@ curl -X DELETE "http://localhost:8088/exam/object?id=19345678" \
 | HTTP 状态码 | code | msg | 说明 |
 |-------------|------|-----|------|
 | 400 | - | `{}` | 参数缺失、非法阶段切换、或时间条件不满足 |
+| 200 | 1 | `exam has no papers` | 考试无试卷，不可开放 |
+| 200 | 2 | `paper has no questions` | 某份试卷无题目，不可开放；响应附带 `paperId` 字段指明具体试卷 |
+| 200 | 3 | `total score of all papers does not match exam full score` | 试卷满分之和不等于考试总分，不可开放；响应附带 `examFull` 和 `totalFull` 字段 |
 | 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
 | 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
 | 404 | - | `{}` | 考试不存在 |

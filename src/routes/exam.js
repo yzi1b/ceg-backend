@@ -172,6 +172,12 @@ router.post('/stage', authenticate, authorize(User.Role.TEACHER), jwtToUser, asy
             || e.message === ExamService.errors.STARTS_AT_PASSED
             || e.message === ExamService.errors.ENDS_AT_NOT_PASSED) {
             return res.status(400).send({});
+        } else if (e.message === ExamService.errors.NO_PAPERS) {
+            return res.status(200).send({ code: 1, msg: e.message });
+        } else if (e.message === ExamService.errors.PAPER_EMPTY) {
+            return res.status(200).send({ code: 2, msg: e.message, paperId: e.paperId });
+        } else if (e.message === ExamService.errors.FULL_MISMATCH) {
+            return res.status(200).send({ code: 3, msg: e.message, examFull: e.examFull, totalFull: e.totalFull });
         } else {
             return res.status(500).send({});
         }

@@ -2,6 +2,8 @@ import Exam from "../entities/Exam.js";
 import ExamTable from "../tables/ExamTable.js";
 import CourseTable from "../tables/CourseTable.js";
 import User from "../entities/User.js";
+import PaperTable from "../tables/PaperTable.js";
+import PaperContent from "../objects/PaperContent.js";
 
 const ExamService = {
     errors: {
@@ -14,6 +16,9 @@ const ExamService = {
         STAGE_INVALID: 'invalid stage transition',
         STARTS_AT_PASSED: 'exam start time has passed, please postpone it first',
         ENDS_AT_NOT_PASSED: 'exam end time has not passed yet',
+        NO_PAPERS: 'exam has no papers',
+        PAPER_EMPTY: 'paper has no questions',
+        FULL_MISMATCH: 'total score of all papers does not match exam full score',
     },
 
     create: async function (courseId, ownerId, title, full, startsAt, endsAt, duration) {
@@ -190,6 +195,32 @@ const ExamService = {
             // 要开放考试，当前时间须在开始时间之前，否则让前端延后开始时间再试
             if (now >= exam.startsAt) {
                 throw new Error(ExamService.errors.STARTS_AT_PASSED);
+            }
+
+            // 至少需要一份试卷
+            const papers = await PaperTable.listPapersByExamId(examId.raw());
+            if (papers.length === 0) {
+                throw new Error(ExamService.errors.NO_PAPERS);
+            }
+
+            // 每份试卷至少有一个题目，且各试卷满分之和须等于考试满分
+            let totalFull = 0;
+            for (const paper of papers) {
+                if (!paper.questions || paper.questions.length === 0) {
+                    const err = new Error(ExamService.errors.PAPER_EMPTY);
+                    err.paperId = paper.id.toDisplay();
+                    throw err;
+                }
+
+                const content = PaperContent.from(paper.title, paper.questions, paper.answers);
+                totalFull += content.getFull();
+            }
+
+            if (totalFull !== exam.full) {
+                const err = new Error(ExamService.errors.FULL_MISMATCH);
+                err.examFull = exam.full;
+                err.totalFull = totalFull;
+                throw err;
             }
         }
 
