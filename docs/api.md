@@ -19,7 +19,13 @@
    - 3.5 [创建课程](#35-post-coursecreate)
    - 3.6 [课程列表](#36-get-courselist)
    - 3.7 [删除课程](#37-delete-courseobject)
-   - 3.8 [创建教师账号](#38-post-adminteachercreate)
+   - 3.8 [创建考试](#38-post-examcreate)
+   - 3.9 [考试列表](#39-get-examlist)
+   - 3.10 [考试详情](#310-get-examobject)
+   - 3.11 [修改考试](#311-post-examobject)
+   - 3.12 [删除考试](#312-delete-examobject)
+   - 3.13 [切换考试阶段](#313-post-examstage)
+   - 3.14 [创建教师账号](#314-post-adminteachercreate)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -474,7 +480,368 @@ curl -X DELETE "http://localhost:8088/course/object?id=92345678" \
 
 ---
 
-### 3.8 POST /admin/teacher/create
+### 3.8 POST /exam/create
+
+创建新考试。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且只能在自己创建的课程下创建。
+
+#### 请求体
+
+```json
+{
+  "courseId": 92345678,
+  "title": "期中考试",
+  "full": 100,
+  "startsAt": 1712345678000,
+  "endsAt": 1712432078000,
+  "duration": 120
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `courseId` | integer | 是 | 课程展示 ID（9 位数字） |
+| `title` | string | 是 | 考试标题，2-32 个字符，无前导/尾随空格，无连续空格 |
+| `full` | integer | 是 | 总分 |
+| `startsAt` | integer | 是 | 开始时间（毫秒时间戳） |
+| `endsAt` | integer | 是 | 结束时间（毫秒时间戳） |
+| `duration` | integer | 是 | 考试时长（分钟） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "id": 19345678
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | integer | 考试展示 ID（9 位带校验码的 Feistel 加密 ID） |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式校验不通过 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher） |
+| 404 | - | `{}` | 课程不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X POST http://localhost:8088/exam/create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"courseId": 92345678, "title": "期中考试", "full": 100, "startsAt": 1712345678000, "endsAt": 1712432078000, "duration": 120}'
+```
+
+---
+
+### 3.9 GET /exam/list
+
+获取指定课程下的所有考试列表。
+
+> **需要认证：** 需登录。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `courseId` | integer | 是 | 课程展示 ID（9 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "objects": [
+    {
+      "id": 19345678,
+      "courseId": 92345678,
+      "title": "期中考试",
+      "full": 100,
+      "stage": "preparing",
+      "startsAt": 1712345678000,
+      "endsAt": 1712432078000,
+      "duration": 120,
+      "createdAt": 1712345678000
+    }
+  ],
+  "count": 1
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `objects` | array | 考试摘要数组 |
+| `objects[].id` | integer | 考试展示 ID |
+| `objects[].courseId` | integer | 所属课程 ID |
+| `objects[].title` | string | 考试标题 |
+| `objects[].full` | integer | 总分 |
+| `objects[].stage` | string | 阶段：`preparing` / `opening` / `grading` / `archived` |
+| `objects[].startsAt` | integer | 开始时间（毫秒时间戳） |
+| `objects[].endsAt` | integer | 结束时间（毫秒时间戳） |
+| `objects[].duration` | integer | 考试时长（分钟） |
+| `objects[].createdAt` | integer | 创建时间（毫秒时间戳） |
+| `count` | integer | 考试数量 |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/exam/list?courseId=92345678" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.10 GET /exam/object
+
+获取指定考试的详细信息。
+
+> **需要认证：** 需登录。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 考试展示 ID（9 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 19345678,
+    "courseId": 92345678,
+    "title": "期中考试",
+    "full": 100,
+    "stage": "preparing",
+    "startsAt": 1712345678000,
+    "endsAt": 1712432078000,
+    "duration": 120,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 404 | - | `{}` | 考试不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/exam/object?id=19345678" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.11 POST /exam/object
+
+修改考试信息。仅当考试处于 `preparing` 阶段时可修改，否则只能删除。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且只能修改自己课程下的考试。
+
+#### 请求体
+
+```json
+{
+  "id": 19345678,
+  "title": "期中考试（更新）",
+  "full": 120,
+  "startsAt": 1712345678000,
+  "endsAt": 1712432078000,
+  "duration": 90
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 考试展示 ID（9 位数字） |
+| `title` | string | 否 | 考试标题，2-32 个字符 |
+| `full` | integer | 否 | 总分 |
+| `startsAt` | integer | 否 | 开始时间（毫秒时间戳） |
+| `endsAt` | integer | 否 | 结束时间（毫秒时间戳） |
+| `duration` | integer | 否 | 考试时长（分钟） |
+
+至少需提供一项可修改字段。
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 19345678,
+    "courseId": 92345678,
+    "title": "期中考试（更新）",
+    "full": 120,
+    "stage": "preparing",
+    "startsAt": 1712345678000,
+    "endsAt": 1712432078000,
+    "duration": 90,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式校验不通过 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher） |
+| 404 | - | `{}` | 考试不存在 |
+| 409 | - | `{}` | 考试不在 preparing 阶段，不可修改 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X POST http://localhost:8088/exam/object \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"id": 19345678, "full": 120, "duration": 90}'
+```
+
+---
+
+### 3.12 DELETE /exam/object
+
+删除指定考试。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且只能删除自己课程下的考试。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 考试展示 ID（9 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
+| 404 | - | `{}` | 考试不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X DELETE "http://localhost:8088/exam/object?id=19345678" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.13 POST /exam/stage
+
+切换考试阶段。阶段只能从前往后切换：`preparing` → `opening` → `grading` → `archived`。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且只能操作自己课程下的考试。
+
+#### 请求体
+
+```json
+{
+  "id": 19345678,
+  "stage": "opening"
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 考试展示 ID（9 位数字） |
+| `stage` | string | 是 | 目标阶段：`opening` / `grading` / `archived` |
+
+#### 阶段切换规则
+
+| 切换 | 条件 |
+|------|------|
+| `preparing` → `opening` | 当前时间须在开始时间之前，否则需先延后开始时间 |
+| `opening` → `grading` | 当前时间须已超过结束时间，否则拒绝 |
+| `grading` → `archived` | TODO |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 19345678,
+    "courseId": 92345678,
+    "title": "期中考试",
+    "full": 100,
+    "stage": "opening",
+    "startsAt": 1712345678000,
+    "endsAt": 1712432078000,
+    "duration": 120,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失、非法阶段切换、或时间条件不满足 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
+| 404 | - | `{}` | 考试不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+# 将考试从 preparing 切换到 opening
+curl -X POST http://localhost:8088/exam/stage \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"id": 19345678, "stage": "opening"}'
+```
+
+---
+
+### 3.14 POST /admin/teacher/create
 
 创建教师账号（管理员专用）。
 
@@ -580,7 +947,22 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 | `created_at` | timestamp | 创建时间 |
 | `updated_at` | timestamp | 更新时间 |
 
-### 5.3 邀请码（InviteCode）
+### 5.3 考试（Exam）
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | integer | 自增主键 |
+| `course_id` | integer | 所属课程 ID（外键关联 Course） |
+| `title` | varchar(32) | 考试标题 |
+| `full` | integer | 总分 |
+| `stage` | varchar(16) | 阶段：`preparing` / `opening` / `grading` / `archived` |
+| `starts_at` | timestamp | 开始时间 |
+| `ends_at` | timestamp | 结束时间 |
+| `duration` | integer | 考试时长（分钟） |
+| `created_at` | timestamp | 创建时间 |
+| `updated_at` | timestamp | 更新时间 |
+
+### 5.4 邀请码（InviteCode）
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
@@ -588,7 +970,7 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 | `expiresAt` | timestamp | 过期时间 |
 | 有效期 | - | 默认 7 天（可通过 `codeDays` 参数自定义） |
 
-### 5.4 角色枚举
+### 5.5 角色枚举
 
 | 角色 | 值 | 说明 |
 |------|-----|------|
@@ -596,7 +978,16 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 | 教师 | `teacher` | 通过管理员创建 |
 | 管理员 | `admin` | 系统初始化时通过环境变量创建 |
 
-### 5.5 展示 ID（DisplayableId）
+### 5.6 考试阶段枚举
+
+| 阶段 | 值 | 说明 |
+|------|-----|------|
+| 准备中 | `preparing` | 考试创建后的初始阶段，可修改 |
+| 进行中 | `opening` | 考试开放作答 |
+| 批改中 | `grading` | 考试结束，阅卷中 |
+| 已归档 | `archived` | 考试归档，不可修改 |
+
+### 5.7 展示 ID（DisplayableId）
 
 展示 ID 是对自增主键进行 Feistel 加密后附加校验码生成的 9 位数字，用于对外暴露时隐藏真实主键。
 
@@ -605,12 +996,12 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 - **格式：** `C + encrypted(8位)` → 共 9 位数字
 - **密钥：** 通过环境变量 `DISPLAY_ID_KEY` 配置
 
-### 5.6 密码加密
+### 5.8 密码加密
 
 - **算法：** scrypt（随机 16 字节盐值，32 字节密钥长度）
 - **密码比较：** 使用 `timingSafeEqual` 防止时序攻击
 
-### 5.7 数据库表
+### 5.9 数据库表
 
 | 表名 | 说明 | 创建时机 |
 |------|------|---------|

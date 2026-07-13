@@ -9,6 +9,7 @@ const PaperTable = {
         TITLE: 'title',
         QUESTIONS: 'questions',
         ANSWERS: 'answers',
+        STAGE: 'stage',
         CREATED_AT: 'created_at',
         UPDATED_AT: 'updated_at',
     },
@@ -30,6 +31,7 @@ const PaperTable = {
             table.string(this.columns.TITLE, 64).notNullable();
             table.jsonb(this.columns.QUESTIONS).notNullable();
             table.jsonb(this.columns.ANSWERS).notNullable();
+            table.string(this.columns.STAGE, 16).notNullable();
             table.timestamp(this.columns.CREATED_AT).notNullable();
             table.timestamp(this.columns.UPDATED_AT).notNullable();
         });
