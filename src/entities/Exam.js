@@ -59,7 +59,7 @@ export default class Exam {
     toJsonSummary() {
         return {
             id: this.id.toDisplay(),
-            courseId: this.courseId,
+            courseId: new DisplayableId(this.courseId).toDisplay(),
             title: this.title,
             full: this.full,
             stage: this.stage,

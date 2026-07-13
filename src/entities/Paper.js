@@ -52,7 +52,7 @@ export default class Paper {
     toJsonSummary() {
         return {
             id: this.id.toDisplay(),
-            examId: this.examId,
+            examId: new DisplayableId(this.examId).toDisplay(),
             title: this.title,
             stage: this.stage,
             createdAt: this.createdAt instanceof Date ? this.createdAt.getTime() : this.createdAt,
@@ -62,7 +62,7 @@ export default class Paper {
     toJsonDetail() {
         return {
             id: this.id.toDisplay(),
-            examId: this.examId,
+            examId: new DisplayableId(this.examId).toDisplay(),
             title: this.title,
             questions: this.questions,
             answers: this.answers,
