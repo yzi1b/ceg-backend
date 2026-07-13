@@ -1,7 +1,6 @@
 import User from "../entities/User.js";
 import UserTable from "../tables/UserTable.js";
 import Password from "../objects/Password.js";
-import Role from "../objects/Role.js";
 
 const AdminService = {
     errors: {
@@ -20,7 +19,7 @@ const AdminService = {
 
         try {
             user = await UserTable.newUser(User.create(
-                userName, Password.fromInput(radomPassword), Role.TEACHER,
+                userName, Password.fromInput(radomPassword), User.Role.TEACHER,
                 fullName, gender
             ));
         } catch (error) {

@@ -5,6 +5,12 @@ const ACCOUNT_ID_MIN = 10000000;
 const ACCOUNT_ID_MAX = 99999999;
 
 export default class User {
+    static Role = {
+        STUDENT: 'student',
+        TEACHER: 'teacher',
+        ADMIN: 'admin',
+    };
+
     static patterns = {
         USER_NAME: /^[A-Za-z][A-Za-z0-9_]{3,15}$/,
         PASSWORD: /^[ -~]{6,16}$/,

@@ -3,7 +3,6 @@ import AuthService from "./services/AuthService.js";
 import UserService from "./services/UserService.js";
 import {authenticate, authorize, jwtToUser} from "./auth.js";
 import Jwt from "./objects/Jwt.js";
-import Role from "./objects/Role.js";
 import AdminService from "./services/AdminService.js";
 import {isNullOrUndefined} from "./utils.js";
 import User from "./entities/User.js";
@@ -126,7 +125,7 @@ export default class Server {
             return res.status(200).send({code: 0});
         });
 
-        this.app.post('/course/create', authenticate, authorize(Role.TEACHER), async (req, res) => {
+        this.app.post('/course/create', authenticate, authorize(User.Role.TEACHER), async (req, res) => {
             if (!req.body) {
                 return res.status(400).send({});
             }
@@ -164,7 +163,7 @@ export default class Server {
             return res.status(200).send({code: 0, id: course.id.toDisplay()});
         });
 
-        this.app.get('/course/list', authenticate, authorize(Role.TEACHER), jwtToUser, async (req, res) => {
+        this.app.get('/course/list', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
             let courses;
 
             try {
@@ -181,7 +180,7 @@ export default class Server {
             });
         });
 
-        this.app.delete('/course/object', authenticate, authorize(Role.TEACHER), jwtToUser, async (req, res) => {
+        this.app.delete('/course/object', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
             if (!req.query.id) {
                 return res.status(400).send({});
             }
@@ -207,7 +206,7 @@ export default class Server {
             return res.status(200).send({code: 0});
         });
 
-        this.app.post('/admin/teacher/create', authenticate, authorize(Role.ADMIN), async (req, res) => {
+        this.app.post('/admin/teacher/create', authenticate, authorize(User.Role.ADMIN), async (req, res) => {
            if (!req.body) {
                return res.status(400).send({});
            }

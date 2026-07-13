@@ -2,7 +2,6 @@ import "dotenv/config";
 import db from "./db.js";
 import UserTable from "./tables/UserTable.js";
 import User from "./entities/User.js";
-import Role from "./objects/Role.js";
 import Server from "./Server.js";
 import Password from "./objects/Password.js";
 import CourseMemberTable from "./tables/CourseMemberTable.js";
@@ -37,7 +36,7 @@ if (!await UserTable.hasAdmin()) {
         User.create(
             process.env.ADMIN_DEFAULT_NAME,
             Password.fromInput(process.env.ADMIN_DEFAULT_PASSWORD),
-            Role.ADMIN, 'Admin', true
+            User.Role.ADMIN, 'Admin', true
         ),
     );
     console.info('admin account created');

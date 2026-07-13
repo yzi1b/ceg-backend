@@ -1,6 +1,5 @@
 import db from "../db.js";
 import User from "../entities/User.js";
-import Role from "../objects/Role.js";
 
 const UserTable = {
     name: "users",
@@ -68,7 +67,7 @@ const UserTable = {
     },
 
     async hasAdmin() {
-        return this.t().where(this.columns.ROLE, Role.ADMIN).first();
+        return this.t().where(this.columns.ROLE, User.Role.ADMIN).first();
     },
 
     async newUser(user) {

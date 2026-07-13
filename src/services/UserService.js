@@ -1,7 +1,6 @@
 import UserTable from "../tables/UserTable.js";
 import User from "../entities/User.js";
 import Password from "../objects/Password.js";
-import Role from "../objects/Role.js";
 
 const UserService = {
     errors: {
@@ -27,7 +26,7 @@ const UserService = {
 
         try {
             user = await UserTable.newUser(User.create(
-                userName, Password.fromInput(password), Role.STUDENT,
+                userName, Password.fromInput(password), User.Role.STUDENT,
                 fullName, gender
             ));
         } catch (error) {
