@@ -180,6 +180,31 @@ export default class Server {
             });
         });
 
+        this.app.get('/course/object', authenticate, jwtToUser, async (req, res) => {
+            if (!req.query.id) {
+                return res.status(400).send({});
+            }
+
+            const id = Number.parseInt(req.query.id);
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).send({});
+            }
+
+            let course;
+            try {
+                course = await CourseService.info(DisplayableId.fromDisplay(id), req.user);
+            } catch (e) {
+                return res.status(500).send({});
+            }
+
+            if (!course) {
+                return res.status(404).send({});
+            }
+
+            return res.status(200).send({code: 0, object: course.toJsonSummary()});
+        });
+
         this.app.delete('/course/object', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
             if (!req.query.id) {
                 return res.status(400).send({});
