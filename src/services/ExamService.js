@@ -204,7 +204,7 @@ const ExamService = {
             }
 
             // 每份试卷至少有一个题目，且各试卷满分之和须等于考试满分
-            let totalFull = 0;
+            const paperInfos = [];
             for (const paper of papers) {
                 if (!paper.questions || paper.questions.length === 0) {
                     const err = new Error(ExamService.errors.PAPER_EMPTY);
@@ -213,13 +213,13 @@ const ExamService = {
                 }
 
                 const content = PaperContent.from(paper.title, paper.questions, paper.answers);
-                totalFull += content.getFull();
+                paperInfos.push({ paperId: paper.id.toDisplay(), full: content.getFull() });
             }
 
+            const totalFull = paperInfos.reduce((sum, p) => sum + p.full, 0);
             if (totalFull !== exam.full) {
                 const err = new Error(ExamService.errors.FULL_MISMATCH);
-                err.examFull = exam.full;
-                err.totalFull = totalFull;
+                err.papers = paperInfos;
                 throw err;
             }
         }

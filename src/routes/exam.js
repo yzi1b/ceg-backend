@@ -179,7 +179,7 @@ router.post('/stage', authenticate, authorize(User.Role.TEACHER), jwtToUser, asy
         } else if (e.message === ExamService.errors.PAPER_EMPTY) {
             return res.status(200).send({ code: 2, msg: e.message, paperId: e.paperId });
         } else if (e.message === ExamService.errors.FULL_MISMATCH) {
-            return res.status(200).send({ code: 3, msg: e.message, examFull: e.examFull, totalFull: e.totalFull });
+            return res.status(200).send({ code: 3, msg: e.message, papers: e.papers });
         } else {
             return res.status(500).send({});
         }
