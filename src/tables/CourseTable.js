@@ -59,7 +59,24 @@ const CourseTable = {
     async dropCourse(courseId) {
         const record = await this.t().where({ [this.columns.ID]: courseId }).del().returning("*");
         return Course.fromRecord(record);
-    }
+    },
+
+    async updateInviteCode(courseId, inviteCode, expiresAt) {
+        const [newRaw] = await this.t()
+            .where({ [this.columns.ID]: courseId })
+            .update({
+                [this.columns.INVITE_CODE]: inviteCode,
+                [this.columns.INVITE_CODE_EXPIRES_AT]: expiresAt,
+                updated_at: new Date(),
+            })
+            .returning('*');
+        return Course.fromRecord(newRaw);
+    },
+
+    async getCourseByInviteCode(code) {
+        const raw = await this.t().where(this.columns.INVITE_CODE, code).first();
+        return raw ? Course.fromRecord(raw) : null;
+    },
 };
 
 export default CourseTable;

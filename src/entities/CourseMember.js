@@ -9,7 +9,7 @@ export default class CourseMember {
 
     static fromRecord(record) {
         return new CourseMember(
-            record.courseId, record.studentId, record.created_at, record.updated_at
+            record.course_id, record.student_id, record.created_at, record.updated_at
         );
     }
 

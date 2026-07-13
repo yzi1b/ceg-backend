@@ -1,6 +1,7 @@
 import db from "../db.js";
 import CourseTable from "./CourseTable.js";
 import UserTable from "./UserTable.js";
+import CourseMember from "../entities/CourseMember.js";
 
 const CourseMemberTable = {
     name: 'course_members',
@@ -30,6 +31,32 @@ const CourseMemberTable = {
             table.timestamp(this.columns.UPDATED_AT).notNullable();
             table.primary([this.columns.COURSE_ID, this.columns.STUDENT_ID]);
         });
+    },
+
+    async addMember(courseId, studentId) {
+        const now = new Date();
+        const [raw] = await this.t()
+            .insert({
+                [this.columns.COURSE_ID]: courseId,
+                [this.columns.STUDENT_ID]: studentId,
+                [this.columns.CREATED_AT]: now,
+                [this.columns.UPDATED_AT]: now,
+            })
+            .returning('*');
+        return CourseMember.fromRecord(raw);
+    },
+
+    async removeMember(courseId, studentId) {
+        await this.t()
+            .where({ [this.columns.COURSE_ID]: courseId, [this.columns.STUDENT_ID]: studentId })
+            .del();
+    },
+
+    async isMember(courseId, studentId) {
+        const row = await this.t()
+            .where({ [this.columns.COURSE_ID]: courseId, [this.columns.STUDENT_ID]: studentId })
+            .first();
+        return !!row;
     },
 };
 

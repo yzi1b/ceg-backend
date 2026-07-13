@@ -1,6 +1,6 @@
 # CSU Exam God Backend API 文档
 
-> 版本：1.1.0  
+> 版本：1.2.0  
 > 基础路径：`http://localhost:8088`  
 > 协议：HTTP/1.1  
 > 数据格式：JSON
@@ -18,18 +18,22 @@
    - 3.4 [修改密码](#34-post-userchangepassword)
    - 3.5 [创建课程](#35-post-coursecreate)
    - 3.6 [课程列表](#36-get-courselist)
-   - 3.7 [删除课程](#37-delete-courseobject)
-   - 3.8 [创建考试](#38-post-examcreate)
-   - 3.9 [考试列表](#39-get-examlist)
-   - 3.10 [考试详情](#310-get-examobject)
-   - 3.11 [修改考试](#311-post-examobject)
-   - 3.12 [删除考试](#312-delete-examobject)
-   - 3.13 [切换考试阶段](#313-post-examstage)
-   - 3.14 [创建试卷](#314-post-papercreate)
-   - 3.15 [试卷列表](#315-get-paperlist)
-   - 3.16 [试卷详情](#316-get-paperobject)
-   - 3.17 [保存试卷内容](#317-post-paperobject)
-   - 3.18 [创建教师账号](#318-post-adminteachercreate)
+   - 3.7 [管理邀请码](#37-post-coursecode)
+   - 3.8 [加入课程](#38-get-coursejoin)
+   - 3.9 [退出课程](#39-delete-coursequit)
+   - 3.10 [踢出学生](#310-delete-coursestudent)
+   - 3.11 [删除课程](#311-delete-courseobject)
+   - 3.12 [创建考试](#312-post-examcreate)
+   - 3.13 [考试列表](#313-get-examlist)
+   - 3.14 [考试详情](#314-get-examobject)
+   - 3.15 [修改考试](#315-post-examobject)
+   - 3.16 [删除考试](#316-delete-examobject)
+   - 3.17 [切换考试阶段](#317-post-examstage)
+   - 3.18 [创建试卷](#318-post-papercreate)
+   - 3.19 [试卷列表](#319-get-paperlist)
+   - 3.20 [试卷详情](#320-get-paperobject)
+   - 3.21 [保存试卷内容](#321-post-paperobject)
+   - 3.22 [创建教师账号](#322-post-adminteachercreate)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -449,7 +453,208 @@ curl -X GET http://localhost:8088/course/list \
 
 ---
 
-### 3.7 DELETE /course/object
+### 3.7 POST /course/code
+
+刷新或关闭课程邀请码。
+
+> **需要认证：** 管理员（`admin`）或课程所有者（`teacher`）。
+
+#### 请求体
+
+```json
+{
+  "courseId": 92345678,
+  "codeDays": 30
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `courseId` | integer | 是 | 课程展示 ID（9 位数字） |
+| `codeDays` | integer | 是 | 有效天数；`>0` 刷新邀请码，`0` 关闭邀请码 |
+
+#### 行为说明
+
+| codeDays | 行为 |
+|----------|------|
+| `> 0` | 生成新的邀请码，有效期为当前时间 + codeDays 天 |
+| `0` | 关闭邀请码，将其置为 null |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 92345678,
+    "title": "高等数学",
+    "inviteCode": "a1b2c3d4e5f6g7h8",
+    "inviteCodeExpiresAt": 1712349278000,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式校验不通过 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 admin 或非本课程教师） |
+| 404 | - | `{}` | 课程不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+# 刷新邀请码（30 天有效）
+curl -X POST http://localhost:8088/course/code \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"courseId": 92345678, "codeDays": 30}'
+
+# 关闭邀请码
+curl -X POST http://localhost:8088/course/code \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"courseId": 92345678, "codeDays": 0}'
+```
+
+---
+
+### 3.8 GET /course/join
+
+学生使用邀请码加入课程。
+
+> **需要认证：** 学生（`student`）角色。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `code` | string | 是 | 16 位邀请码 |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 92345678,
+    "title": "高等数学",
+    "inviteCode": "a1b2c3d4e5f6g7h8",
+    "inviteCodeExpiresAt": 1712349278000,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 200 | 1 | `invite code is invalid or expired` | 邀请码无效或已过期 |
+| 200 | 2 | `you are already a member of this course` | 已经在该课程中 |
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 student） |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/course/join?code=a1b2c3d4e5f6g7h8" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.9 DELETE /course/quit
+
+学生退出课程。
+
+> **需要认证：** 学生（`student`）角色。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 课程展示 ID（9 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 200 | 1 | `you are not a member of this course` | 不在该课程中 |
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 student） |
+| 404 | - | `{}` | 课程不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X DELETE "http://localhost:8088/course/quit?id=92345678" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.10 DELETE /course/student
+
+管理员或课程所有者将学生踢出课程。
+
+> **需要认证：** 管理员（`admin`）或课程所有者（`teacher`）。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 课程展示 ID（9 位数字） |
+| `studentId` | integer | 是 | 学生账号 ID（8 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 200 | 1 | `cannot kick yourself` | 不能将自己踢出课程 |
+| 200 | 2 | `student is not in this course` | 学生不在该课程中 |
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 admin 或非本课程教师） |
+| 404 | - | `{}` | 课程不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X DELETE "http://localhost:8088/course/student?id=92345678&studentId=10000001" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.11 DELETE /course/object
 
 删除指定课程。
 
@@ -484,7 +689,7 @@ curl -X DELETE "http://localhost:8088/course/object?id=92345678" \
 
 ---
 
-### 3.8 POST /exam/create
+### 3.12 POST /exam/create
 
 创建新考试。
 
@@ -548,7 +753,7 @@ curl -X POST http://localhost:8088/exam/create \
 
 ---
 
-### 3.9 GET /exam/list
+### 3.13 GET /exam/list
 
 获取指定课程下的所有考试列表。
 
@@ -613,7 +818,7 @@ curl -X GET "http://localhost:8088/exam/list?courseId=92345678" \
 
 ---
 
-### 3.10 GET /exam/object
+### 3.14 GET /exam/object
 
 获取指定考试的详细信息。
 
@@ -662,7 +867,7 @@ curl -X GET "http://localhost:8088/exam/object?id=19345678" \
 
 ---
 
-### 3.11 POST /exam/object
+### 3.15 POST /exam/object
 
 修改考试信息。仅当考试处于 `preparing` 阶段时可修改，否则只能删除。
 
@@ -735,7 +940,7 @@ curl -X POST http://localhost:8088/exam/object \
 
 ---
 
-### 3.12 DELETE /exam/object
+### 3.16 DELETE /exam/object
 
 删除指定考试。
 
@@ -774,7 +979,7 @@ curl -X DELETE "http://localhost:8088/exam/object?id=19345678" \
 
 ---
 
-### 3.13 POST /exam/stage
+### 3.17 POST /exam/stage
 
 切换考试阶段。阶段只能从前往后切换：`preparing` → `opening` → `grading` → `archived`。
 
@@ -848,7 +1053,7 @@ curl -X POST http://localhost:8088/exam/stage \
 
 ---
 
-### 3.14 POST /paper/create
+### 3.18 POST /paper/create
 
 创建新试卷（空白）。
 
@@ -905,7 +1110,7 @@ curl -X POST http://localhost:8088/paper/create \
 
 ---
 
-### 3.15 GET /paper/list
+### 3.19 GET /paper/list
 
 获取指定考试下的所有试卷基本信息列表。
 
@@ -962,7 +1167,7 @@ curl -X GET "http://localhost:8088/paper/list?examId=19345678" \
 
 ---
 
-### 3.16 GET /paper/object
+### 3.20 GET /paper/object
 
 获取指定试卷的完整信息（含题目和答案）。
 
@@ -1021,7 +1226,7 @@ curl -X GET "http://localhost:8088/paper/object?id=23456789" \
 
 ---
 
-### 3.17 POST /paper/object
+### 3.21 POST /paper/object
 
 覆盖保存试卷的题目和答案。每次调用会完全替换原有的题目和答案数组。
 
@@ -1109,7 +1314,7 @@ curl -X POST "http://localhost:8088/paper/object?id=23456789" \
 
 ---
 
-### 3.18 POST /admin/teacher/create
+### 3.22 POST /admin/teacher/create
 
 创建教师账号（管理员专用）。
 

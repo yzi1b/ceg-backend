@@ -48,9 +48,9 @@ export default class Course {
         return {
             id: this.id.toDisplay(),
             title: this.title,
-            inviteCode: this.inviteCode.code,
-            inviteCodeExpiresAt: this.inviteCode.expiresAt.getTime(),
-            createdAt: this.createdAt.getTime(),
+            inviteCode: this.inviteCode ? this.inviteCode.code : null,
+            inviteCodeExpiresAt: this.inviteCode?.expiresAt?.getTime?.() ?? 0,
+            createdAt: this.createdAt instanceof Date ? this.createdAt.getTime() : this.createdAt,
         };
     }
 }
