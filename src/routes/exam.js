@@ -168,10 +168,12 @@ router.post('/stage', authenticate, authorize(User.Role.TEACHER), jwtToUser, asy
             return res.status(404).send({});
         } else if (e.message === ExamService.errors.FORBIDDEN) {
             return res.status(403).send({});
-        } else if (e.message === ExamService.errors.STAGE_INVALID
-            || e.message === ExamService.errors.STARTS_AT_PASSED
-            || e.message === ExamService.errors.ENDS_AT_NOT_PASSED) {
-            return res.status(400).send({});
+        } else if (e.message === ExamService.errors.STAGE_INVALID) {
+            return res.status(200).send({ code: 4, msg: e.message });
+        } else if (e.message === ExamService.errors.STARTS_AT_PASSED) {
+            return res.status(200).send({ code: 5, msg: e.message });
+        } else if (e.message === ExamService.errors.ENDS_AT_NOT_PASSED) {
+            return res.status(200).send({ code: 6, msg: e.message });
         } else if (e.message === ExamService.errors.NO_PAPERS) {
             return res.status(200).send({ code: 1, msg: e.message });
         } else if (e.message === ExamService.errors.PAPER_EMPTY) {

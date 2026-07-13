@@ -1032,10 +1032,13 @@ curl -X DELETE "http://localhost:8088/exam/object?id=19345678" \
 
 | HTTP 状态码 | code | msg | 说明 |
 |-------------|------|-----|------|
-| 400 | - | `{}` | 参数缺失、非法阶段切换、或时间条件不满足 |
+| 400 | - | `{}` | 参数缺失 |
 | 200 | 1 | `exam has no papers` | 考试无试卷，不可开放 |
 | 200 | 2 | `paper has no questions` | 某份试卷无题目，不可开放；响应附带 `paperId` 字段指明具体试卷 |
 | 200 | 3 | `total score of all papers does not match exam full score` | 试卷满分之和不等于考试总分，不可开放；响应附带 `examFull` 和 `totalFull` 字段 |
+| 200 | 4 | `invalid stage transition` | 非法阶段切换（如跳过阶段或向后切换） |
+| 200 | 5 | `exam start time has passed, please postpone it first` | 考试开始时间已过，需延后开始时间再开放 |
+| 200 | 6 | `exam end time has not passed yet` | 考试结束时间未到，不可进入阅卷 |
 | 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
 | 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
 | 404 | - | `{}` | 考试不存在 |
