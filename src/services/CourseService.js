@@ -224,6 +224,23 @@ const CourseService = {
         return await CourseTable.updateCourse(course);
     },
 
+    students: async function(courseId, visitor) {
+        if (!courseId.isValid()) {
+            throw new Error(CourseService.errors.COURSE_NOT_EXIST);
+        }
+
+        const course = await CourseTable.getCourseById(courseId.raw());
+        if (!course) {
+            throw new Error(CourseService.errors.COURSE_NOT_EXIST);
+        }
+
+        if (visitor.role !== User.Role.ADMIN && course.owner !== visitor.id) {
+            throw new Error(CourseService.errors.COURSE_NOT_OWNED);
+        }
+
+        return await CourseMemberTable.listStudentsByCourse(courseId.raw());
+    },
+
     hasPermission: async function(course, visitor) {
         if (visitor.role === User.Role.ADMIN) {
             return true;

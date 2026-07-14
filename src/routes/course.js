@@ -212,6 +212,31 @@ router.delete('/quit', authenticate, authorize(User.Role.STUDENT), jwtToUser, as
     }
 });
 
+router.get('/students', authenticate, authorize(User.Role.TEACHER, User.Role.ADMIN), jwtToUser, async (req, res) => {
+    if (!req.query.id) {
+        return res.status(400).send({});
+    }
+
+    const id = Number.parseInt(req.query.id);
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send({});
+    }
+
+    try {
+        const students = await CourseService.students(DisplayableId.fromDisplay(id), req.user);
+        const objects = students.map(s => s.toJson());
+        return res.status(200).send({ code: 0, objects, count: objects.length });
+    } catch (e) {
+        if (e.message === CourseService.errors.COURSE_NOT_EXIST) {
+            return res.status(404).send({});
+        } else if (e.message === CourseService.errors.COURSE_NOT_OWNED) {
+            return res.status(403).send({});
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
 router.delete('/student', authenticate, authorize(User.Role.TEACHER, User.Role.ADMIN), jwtToUser, async (req, res) => {
     if (!req.query.id || !req.query.studentId) {
         return res.status(400).send({});

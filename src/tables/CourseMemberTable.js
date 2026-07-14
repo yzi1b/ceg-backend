@@ -1,6 +1,7 @@
 import db from "../db.js";
 import CourseTable from "./CourseTable.js";
 import UserTable from "./UserTable.js";
+import User from "../entities/User.js";
 import CourseMember from "../entities/CourseMember.js";
 
 const CourseMemberTable = {
@@ -57,6 +58,14 @@ const CourseMemberTable = {
             .where({ [this.columns.COURSE_ID]: courseId, [this.columns.STUDENT_ID]: studentId })
             .first();
         return !!row;
+    },
+
+    async listStudentsByCourse(courseId) {
+        const raws = await this.t()
+            .join(UserTable.name, this.columns.STUDENT_ID, `${UserTable.name}.${UserTable.columns.ID}`)
+            .where(this.columns.COURSE_ID, courseId)
+            .select(`${UserTable.name}.*`);
+        return raws.map(User.fromRecord);
     },
 };
 
