@@ -46,6 +46,10 @@ const SubmissionTable = {
 
     async createSubmission(submission) {
         const raw = submission.toRecord();
+        raw[this.columns.ANSWERS] = JSON.stringify(raw[this.columns.ANSWERS]);
+        if (raw[this.columns.SCORES] !== null && raw[this.columns.SCORES] !== undefined) {
+            raw[this.columns.SCORES] = JSON.stringify(raw[this.columns.SCORES]);
+        }
         const [newRaw] = await this.t().insert(raw).returning('*');
         return Submission.fromRecord(newRaw);
     },
@@ -69,6 +73,10 @@ const SubmissionTable = {
 
     async updateSubmission(submission) {
         const raw = submission.toRecord();
+        raw[this.columns.ANSWERS] = JSON.stringify(raw[this.columns.ANSWERS]);
+        if (raw[this.columns.SCORES] !== null && raw[this.columns.SCORES] !== undefined) {
+            raw[this.columns.SCORES] = JSON.stringify(raw[this.columns.SCORES]);
+        }
         const [newRaw] = await this.t()
             .where({
                 [this.columns.EXAM_ID]: raw.exam_id,
