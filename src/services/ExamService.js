@@ -8,6 +8,8 @@ import PaperContent from "../objects/PaperContent.js";
 import CourseMemberTable from "../tables/CourseMemberTable.js";
 import SubmissionTable from "../tables/SubmissionTable.js";
 import Submission from "../entities/Submission.js";
+import UserTable from "../tables/UserTable.js";
+import DisplayableId from "../objects/DisplayableId.js";
 
 const GRACE_PERIOD = 2 * 60 * 1000; // 2 minutes in ms, extra time for final submission
 
@@ -32,6 +34,7 @@ const ExamService = {
         SUBMISSION_NOT_FOUND: 'submission not found, please take the exam first',
         ALREADY_SUBMITTED: 'you have already submitted',
         PAPERS_NOT_ARCHIVED: 'not all papers are archived',
+        NOT_ARCHIVED: 'exam is not archived',
     },
 
     GRACE_PERIOD,
@@ -341,6 +344,45 @@ const ExamService = {
         submission.submit = submit;
 
         return await SubmissionTable.updateSubmission(submission);
+    },
+
+    scores: async function (examId, visitor) {
+        const exam = await ExamTable.getExamById(examId);
+        if (!exam) {
+            throw new Error(ExamService.errors.EXAM_NOT_EXIST);
+        }
+        if (exam.stage !== Exam.Stage.ARCHIVED) {
+            throw new Error(ExamService.errors.NOT_ARCHIVED);
+        }
+
+        const course = await CourseTable.getCourseById(exam.courseId);
+        if (!course || course.owner !== visitor.id) {
+            throw new Error(ExamService.errors.FORBIDDEN);
+        }
+
+        const allSubmissions = await SubmissionTable.listByExam(examId);
+        const submitted = allSubmissions.filter(s => s.submit);
+
+        const papers = await PaperTable.listPapersByExamId(examId);
+        const paperMap = {};
+        for (const paper of papers) {
+            paperMap[paper.id.toDisplay()] = paper.title;
+        }
+
+        const objects = [];
+        for (const sub of submitted) {
+            const user = await UserTable.findById(sub.studentId);
+            if (!user) continue;
+
+            objects.push({
+                accountId: user.accountId,
+                userName: user.userName,
+                paperId: new DisplayableId(sub.paperId).toDisplay(),
+                total: sub.total,
+            });
+        }
+
+        return { exam, objects, paperMap };
     },
 
     hasPermission: async function (course, visitor) {

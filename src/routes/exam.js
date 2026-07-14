@@ -296,4 +296,39 @@ router.post('/stage', authenticate, authorize(User.Role.TEACHER), jwtToUser, asy
     }
 });
 
+router.get('/scores', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
+    if (!req.query.id) {
+        return res.status(400).send({});
+    }
+
+    const id = Number.parseInt(req.query.id);
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send({});
+    }
+
+    try {
+        const result = await ExamService.scores(
+            DisplayableId.fromDisplay(id).raw(), req.user
+        );
+
+        return res.status(200).send({
+            code: 0,
+            exam: result.exam.toJsonSummary(),
+            papers: result.paperMap,
+            objects: result.objects,
+            count: result.objects.length,
+        });
+    } catch (e) {
+        if (e.message === ExamService.errors.EXAM_NOT_EXIST) {
+            return res.status(404).send({});
+        } else if (e.message === ExamService.errors.NOT_ARCHIVED) {
+            return res.status(200).send({ code: 1, msg: e.message });
+        } else if (e.message === ExamService.errors.FORBIDDEN) {
+            return res.status(403).send({});
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
 export default router;

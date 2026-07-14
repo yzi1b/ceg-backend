@@ -1,6 +1,6 @@
 # CSU Exam God Backend API 文档
 
-> 版本：1.9.0  
+> 版本：1.10.0  
 > 基础路径：`http://localhost:8088`  
 > 协议：HTTP/1.1  
 > 数据格式：JSON
@@ -49,6 +49,7 @@
    - 3.35 [提交评分](#335-post-papergradescore)
    - 3.36 [完成评分](#336-get-papergradefinish)
    - 3.37 [我的主页](#337-get-my)
+   - 3.38 [考试成绩](#338-get-examscores)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -2380,6 +2381,87 @@ curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
 
 ```bash
 curl -X GET http://localhost:8088/my \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.38 GET /exam/scores
+
+获取已归档考试的所有考生成绩列表。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且为课程所有者。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 考试展示 ID（9 位数字） |
+
+#### 前置条件
+
+| 条件 | 说明 |
+|------|------|
+| 考试阶段 | 须为 `archived` |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "exam": {
+    "id": 19345678,
+    "courseId": 92345678,
+    "title": "期中考试",
+    "full": 100,
+    "stage": "archived",
+    "startsAt": 1712345678000,
+    "endsAt": 1712432078000,
+    "duration": 120,
+    "createdAt": 1712345678000
+  },
+  "papers": {
+    "23456789": "第一单元测验",
+    "34567890": "第二单元测验"
+  },
+  "objects": [
+    {
+      "accountId": 68123457,
+      "userName": "alice",
+      "paperId": "23456789",
+      "total": 85
+    }
+  ],
+  "count": 1
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `exam` | object | 考试基本信息 |
+| `papers` | object | 试卷对照表，key 为试卷展示 ID，value 为试卷标题 |
+| `objects` | array | 考生成绩数组 |
+| `objects[].accountId` | integer | 考生账号 ID（8 位数字） |
+| `objects[].userName` | string | 考生用户名 |
+| `objects[].paperId` | integer | 考生分配的试卷展示 ID（9 位数字） |
+| `objects[].total` | number | 考生总分，`-1` 表示未完成或未评分 |
+| `count` | integer | 已交卷考生总数 |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
+| 404 | - | `{}` | 考试不存在 |
+| 200 | 1 | `exam is not archived` | 考试未归档，暂不可查看成绩 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/exam/scores?id=19345678" \
   -H "Authorization: Bearer <token>"
 ```
 
