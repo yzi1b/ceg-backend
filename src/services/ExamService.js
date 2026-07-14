@@ -275,10 +275,6 @@ const ExamService = {
             throw new Error(ExamService.errors.NOT_IN_TIME_WINDOW);
         }
 
-        if (now > exam.startsAt.getTime() + exam.duration * 60_000) {
-            throw new Error(ExamService.errors.TIME_EXPIRED);
-        }
-
         let submission = await SubmissionTable.getSubmission(examId, visitor.id);
 
         if (!submission) {
