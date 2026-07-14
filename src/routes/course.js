@@ -248,12 +248,17 @@ router.delete('/student', authenticate, authorize(User.Role.TEACHER, User.Role.A
     }
 
     const studentId = Number.parseInt(req.query.studentId);
-    if (!Number.isInteger(studentId) || studentId <= 0) {
+    if (!Number.isInteger(studentId) || studentId < 10000000 || studentId > 99999999) {
+        return res.status(400).send({});
+    }
+
+    const student = await UserTable.findByAccountId(studentId);
+    if (!student) {
         return res.status(400).send({});
     }
 
     try {
-        await CourseService.kick(DisplayableId.fromDisplay(id), req.user, studentId);
+        await CourseService.kick(DisplayableId.fromDisplay(id), req.user, student.id);
         return res.status(200).send({code: 0});
     } catch (e) {
         if (e.message === CourseService.errors.COURSE_NOT_EXIST) {

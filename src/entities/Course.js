@@ -30,8 +30,8 @@ export default class Course {
             id: this.id.raw(),
             owner: this.owner,
             title: this.title,
-            invite_code: this.inviteCode.code,
-            invite_code_expires_at: this.inviteCode.expiresAt,
+            invite_code: this.inviteCode?.code ?? null,
+            invite_code_expires_at: this.inviteCode?.expiresAt ?? null,
             created_at: this.createdAt,
             updated_at: this.updatedAt,
         };
