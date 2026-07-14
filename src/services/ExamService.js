@@ -5,6 +5,10 @@ import User from "../entities/User.js";
 import PaperTable from "../tables/PaperTable.js";
 import PaperContent from "../objects/PaperContent.js";
 import CourseMemberTable from "../tables/CourseMemberTable.js";
+import SubmissionTable from "../tables/SubmissionTable.js";
+import Submission from "../entities/Submission.js";
+
+const GRACE_PERIOD = 2 * 60 * 1000; // 2 minutes in ms, extra time for final submission
 
 const ExamService = {
     errors: {
@@ -20,7 +24,15 @@ const ExamService = {
         NO_PAPERS: 'exam has no papers',
         PAPER_EMPTY: 'paper has no questions',
         FULL_MISMATCH: 'total score of all papers does not match exam full score',
+        NOT_OPENING: 'exam is not in opening stage',
+        NOT_IN_TIME_WINDOW: 'exam is not in the time window',
+        TIME_EXPIRED: 'exam duration has expired',
+        PAPER_NOT_FOUND: 'paper not found',
+        SUBMISSION_NOT_FOUND: 'submission not found, please take the exam first',
+        ALREADY_SUBMITTED: 'you have already submitted',
     },
+
+    GRACE_PERIOD,
 
     create: async function (courseId, ownerId, title, full, startsAt, endsAt, duration) {
         if (!Exam.patterns.TITLE.test(title)) {
@@ -239,6 +251,92 @@ const ExamService = {
         return await ExamTable.updateExam(exam);
 
         // TODO 后续行为：状态变更后的副作用（如 opening 时通知学生、archived 时清理等）
+    },
+
+    take: async function (examId, visitor) {
+        const exam = await ExamTable.getExamById(examId);
+        if (!exam) {
+            throw new Error(ExamService.errors.EXAM_NOT_EXIST);
+        }
+
+        if (exam.stage !== Exam.Stage.OPENING) {
+            throw new Error(ExamService.errors.NOT_OPENING);
+        }
+
+        const now = Date.now();
+        if (now < exam.startsAt || now > exam.endsAt) {
+            throw new Error(ExamService.errors.NOT_IN_TIME_WINDOW);
+        }
+
+        if (now > exam.startsAt.getTime() + exam.duration * 60_000) {
+            throw new Error(ExamService.errors.TIME_EXPIRED);
+        }
+
+        let submission = await SubmissionTable.getSubmission(examId, visitor.id);
+
+        if (!submission) {
+            const papers = await PaperTable.listPapersByExamId(examId);
+            if (papers.length === 0) {
+                throw new Error(ExamService.errors.NO_PAPERS);
+            }
+
+            const paper = papers[Math.floor(Math.random() * papers.length)];
+
+            submission = Submission.create(examId, visitor.id, paper.id.raw());
+            submission = await SubmissionTable.createSubmission(submission);
+
+            return { exam, paper, submission, isNew: true };
+        } else {
+            if (submission.submit) {
+                throw new Error(ExamService.errors.ALREADY_SUBMITTED);
+            }
+
+            const paper = await PaperTable.getPaperById(submission.paperId);
+            if (!paper) {
+                throw new Error(ExamService.errors.PAPER_NOT_FOUND);
+            }
+
+            return { exam, paper, submission, isNew: false };
+        }
+    },
+
+    submit: async function (examId, visitor, answers, submit) {
+        const exam = await ExamTable.getExamById(examId);
+        if (!exam) {
+            throw new Error(ExamService.errors.EXAM_NOT_EXIST);
+        }
+
+        if (exam.stage !== Exam.Stage.OPENING) {
+            throw new Error(ExamService.errors.NOT_OPENING);
+        }
+
+        const now = Date.now();
+        if (now < exam.startsAt || now > exam.endsAt) {
+            throw new Error(ExamService.errors.NOT_IN_TIME_WINDOW);
+        }
+
+        const submission = await SubmissionTable.getSubmission(examId, visitor.id);
+        if (!submission) {
+            throw new Error(ExamService.errors.SUBMISSION_NOT_FOUND);
+        }
+
+        if (submission.submit) {
+            throw new Error(ExamService.errors.ALREADY_SUBMITTED);
+        }
+
+        const deadline = submission.submittedAt instanceof Date
+            ? submission.submittedAt.getTime()
+            : submission.submittedAt;
+
+        const extra = submit ? ExamService.GRACE_PERIOD : 0;
+        if (now > deadline + exam.duration * 60_000 + extra) {
+            throw new Error(ExamService.errors.TIME_EXPIRED);
+        }
+
+        submission.answers = answers;
+        submission.submit = submit;
+
+        return await SubmissionTable.updateSubmission(submission);
     },
 
     hasPermission: async function (course, visitor) {

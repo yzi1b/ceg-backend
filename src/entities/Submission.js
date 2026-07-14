@@ -19,6 +19,10 @@ export default class Submission {
         );
     }
 
+    static create(examId, studentId, paperId) {
+        return new Submission(examId, studentId, paperId, [], false, null, null, new Date());
+    }
+
     toRecord() {
         return {
             exam_id: this.examId,

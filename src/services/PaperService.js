@@ -150,7 +150,6 @@ const PaperService = {
         } else if (visitor.role === User.Role.TEACHER) {
             return course.owner === visitor.id;
         } else if (visitor.role === User.Role.STUDENT) {
-            // TODO 检查学生是否在课程内
             return false;
         }
 

@@ -150,6 +150,96 @@ router.delete('/object', authenticate, authorize(User.Role.TEACHER), jwtToUser, 
     }
 });
 
+router.get('/take', authenticate, authorize(User.Role.STUDENT), jwtToUser, async (req, res) => {
+    if (!req.query.id) {
+        return res.status(400).send({});
+    }
+
+    const id = Number.parseInt(req.query.id);
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send({});
+    }
+
+    try {
+        const result = await ExamService.take(
+            DisplayableId.fromDisplay(id).raw(), req.user
+        );
+
+        const body = {
+            exam: result.exam.toJsonSummary(),
+            paper: {
+                id: result.paper.id.toDisplay(),
+                title: result.paper.title,
+                questions: result.paper.questions,
+            },
+            submittedAt: result.submission.submittedAt instanceof Date
+                ? result.submission.submittedAt.getTime()
+                : result.submission.submittedAt,
+            submit: result.submission.submit,
+        };
+
+        if (!result.isNew) {
+            body.answers = result.submission.answers;
+        }
+
+        return res.status(200).send(body);
+    } catch (e) {
+        if (e.message === ExamService.errors.EXAM_NOT_EXIST) {
+            return res.status(404).send({});
+        } else if (e.message === ExamService.errors.NOT_OPENING) {
+            return res.status(409).send({});
+        } else if (e.message === ExamService.errors.NOT_IN_TIME_WINDOW) {
+            return res.status(200).send({ code: 1, msg: 'exam is not in the time window' });
+        } else if (e.message === ExamService.errors.TIME_EXPIRED) {
+            return res.status(200).send({ code: 2, msg: 'exam duration has expired' });
+        } else if (e.message === ExamService.errors.ALREADY_SUBMITTED) {
+            return res.status(200).send({ code: 4, msg: 'you have already submitted' });
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
+router.post('/submit', authenticate, authorize(User.Role.STUDENT), jwtToUser, async (req, res) => {
+    if (!req.query.id) {
+        return res.status(400).send({});
+    }
+
+    const id = Number.parseInt(req.query.id);
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send({});
+    }
+
+    if (!req.body || !Array.isArray(req.body.answers) || typeof req.body.submit !== 'boolean') {
+        return res.status(400).send({});
+    }
+
+    try {
+        await ExamService.submit(
+            DisplayableId.fromDisplay(id).raw(), req.user,
+            req.body.answers, req.body.submit
+        );
+
+        return res.status(200).send({ code: 0 });
+    } catch (e) {
+        if (e.message === ExamService.errors.EXAM_NOT_EXIST) {
+            return res.status(404).send({});
+        } else if (e.message === ExamService.errors.NOT_OPENING) {
+            return res.status(409).send({});
+        } else if (e.message === ExamService.errors.NOT_IN_TIME_WINDOW) {
+            return res.status(200).send({ code: 1, msg: 'exam is not in the time window' });
+        } else if (e.message === ExamService.errors.TIME_EXPIRED) {
+            return res.status(200).send({ code: 2, msg: 'exam duration has expired' });
+        } else if (e.message === ExamService.errors.SUBMISSION_NOT_FOUND) {
+            return res.status(200).send({ code: 3, msg: 'submission not found, please take the exam first' });
+        } else if (e.message === ExamService.errors.ALREADY_SUBMITTED) {
+            return res.status(200).send({ code: 4, msg: 'you have already submitted' });
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
 router.post('/stage', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
     if (!req.body || !req.body.id || !req.body.stage) {
         return res.status(400).send({});
