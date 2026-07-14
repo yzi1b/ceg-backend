@@ -3,7 +3,10 @@ import {authenticate, authorize, jwtToUser} from "../auth.js";
 import {stringUsable} from "string-usable";
 import DisplayableId from "../objects/DisplayableId.js";
 import ExamService from "../services/ExamService.js";
+import Exam from "../entities/Exam.js";
 import User from "../entities/User.js";
+import Submission from "../entities/Submission.js";
+import SubmissionTable from "../tables/SubmissionTable.js";
 
 const router = Router();
 
@@ -80,7 +83,19 @@ router.get('/object', authenticate, jwtToUser, async (req, res) => {
         if (!exam) {
             return res.status(404).send({});
         }
-        return res.status(200).send({ code: 0, object: exam.toJsonSummary() });
+
+        const summary = exam.toJsonSummary();
+
+        if (req.user.role === User.Role.STUDENT) {
+            const submission = await SubmissionTable.getSubmission(exam.id.raw(), req.user.id);
+            summary.score = submission && exam.stage === Exam.Stage.ARCHIVED
+                ? submission.total : -1;
+            summary.status = submission
+                ? (submission.submit ? Submission.Status.SUBMITTED : Submission.Status.IN_PROGRESS)
+                : Submission.Status.NOT_TAKEN;
+        }
+
+        return res.status(200).send({ code: 0, object: summary });
     } catch (e) {
         return res.status(500).send({});
     }
@@ -270,6 +285,8 @@ router.post('/stage', authenticate, authorize(User.Role.TEACHER), jwtToUser, asy
             return res.status(200).send({ code: 2, msg: e.message, paperId: e.paperId });
         } else if (e.message === ExamService.errors.FULL_MISMATCH) {
             return res.status(200).send({ code: 3, msg: e.message, papers: e.papers });
+        } else if (e.message === ExamService.errors.PAPERS_NOT_ARCHIVED) {
+            return res.status(200).send({ code: 7, msg: e.message });
         } else {
             return res.status(500).send({});
         }

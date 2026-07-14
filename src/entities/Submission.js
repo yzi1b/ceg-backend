@@ -1,5 +1,11 @@
 
 export default class Submission {
+    static Status = {
+        NOT_TAKEN: 'not_taken',     // 未参考
+        IN_PROGRESS: 'in_progress', // 一开始
+        SUBMITTED: 'submitted',     // 已提交
+    };
+
     constructor(examId, studentId, paperId, answers, submit, scores, total, submittedAt) {
         this.examId = examId;
         this.studentId = studentId;

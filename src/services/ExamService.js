@@ -30,6 +30,7 @@ const ExamService = {
         PAPER_NOT_FOUND: 'paper not found',
         SUBMISSION_NOT_FOUND: 'submission not found, please take the exam first',
         ALREADY_SUBMITTED: 'you have already submitted',
+        PAPERS_NOT_ARCHIVED: 'not all papers are archived',
     },
 
     GRACE_PERIOD,
@@ -244,13 +245,19 @@ const ExamService = {
             }
         }
 
-        // TODO 补充 grading → archived 的条件
+        if (targetStage === Exam.Stage.ARCHIVED) {
+            // 要归档，所有试卷必须已归档
+            const papers = await PaperTable.listPapersByExamId(examId.raw());
+            for (const paper of papers) {
+                if (paper.stage !== Paper.Stage.ARCHIVED) {
+                    throw new Error(ExamService.errors.PAPERS_NOT_ARCHIVED);
+                }
+            }
+        }
 
         exam.stage = targetStage;
 
         return await ExamTable.updateExam(exam);
-
-        // TODO 后续行为：状态变更后的副作用（如 opening 时通知学生、archived 时清理等）
     },
 
     take: async function (examId, visitor) {
