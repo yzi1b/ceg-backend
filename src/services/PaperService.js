@@ -470,6 +470,29 @@ const PaperService = {
         return paper;
     },
 
+    drop: async function (paperId, visitor) {
+        if (!paperId.isValid()) {
+            throw new Error(PaperService.errors.PAPER_NOT_EXIST);
+        }
+
+        const paper = await PaperTable.getPaperById(paperId.raw());
+        if (!paper) {
+            throw new Error(PaperService.errors.PAPER_NOT_EXIST);
+        }
+
+        const exam = await ExamTable.getExamById(paper.examId);
+        if (!exam || exam.stage !== Exam.Stage.PREPARING) {
+            throw new Error(PaperService.errors.NOT_PREPARING);
+        }
+
+        const course = await CourseTable.getCourseById(exam.courseId);
+        if (!course || course.owner !== visitor.id) {
+            throw new Error(PaperService.errors.FORBIDDEN);
+        }
+
+        return await PaperTable.dropPaper(paperId.raw());
+    },
+
     hasPermission: async function (course, visitor) {
         if (visitor.role === User.Role.ADMIN) {
             return true;

@@ -1,6 +1,6 @@
 # CSU Exam God Backend API 文档
 
-> 版本：1.8.0  
+> 版本：1.9.0  
 > 基础路径：`http://localhost:8088`  
 > 协议：HTTP/1.1  
 > 数据格式：JSON
@@ -37,17 +37,18 @@
    - 3.23 [试卷列表](#323-get-paperlist)
    - 3.24 [试卷详情](#324-get-paperobject)
    - 3.25 [保存试卷内容](#325-post-paperobject)
-   - 3.26 [创建教师账号](#326-post-adminteachercreate)
-   - 3.27 [用户列表](#327-get-adminuserlist)
-   - 3.28 [重置密码](#328-get-adminuserpassword)
-   - 3.29 [开始考试](#329-get-examtake)
-   - 3.30 [提交作答](#330-post-examsubmit)
-   - 3.31 [开始评分](#331-get-papergradestart)
-   - 3.32 [评分概览](#332-get-papergradetasks)
-   - 3.33 [下一份评分](#333-get-papergradenext)
-   - 3.34 [提交评分](#334-post-papergradescore)
-   - 3.35 [完成评分](#335-get-papergradefinish)
-   - 3.36 [我的主页](#336-get-my)
+   - 3.26 [删除试卷](#326-delete-paperobject)
+   - 3.27 [创建教师账号](#327-post-adminteachercreate)
+   - 3.28 [用户列表](#328-get-adminuserlist)
+   - 3.29 [重置密码](#329-get-adminuserpassword)
+   - 3.30 [开始考试](#330-get-examtake)
+   - 3.31 [提交作答](#331-post-examsubmit)
+   - 3.32 [开始评分](#332-get-papergradestart)
+   - 3.33 [评分概览](#333-get-papergradetasks)
+   - 3.34 [下一份评分](#334-get-papergradenext)
+   - 3.35 [提交评分](#335-post-papergradescore)
+   - 3.36 [完成评分](#336-get-papergradefinish)
+   - 3.37 [我的主页](#337-get-my)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -1124,6 +1125,7 @@ curl -X GET "http://localhost:8088/exam/list?courseId=92345678" \
 |------|------|------|
 | `score` | integer | 考试成绩，未归档或无提交时返回 `-1` |
 | `status` | string | 参与状态：`not_taken`（未参考）/ `in_progress`（一开始）/ `submitted`（已提交） |
+| `startedAt` | integer | 开始考试时间（毫秒时间戳），未参考时返回 `0` |
 
 ```json
 {
@@ -1134,6 +1136,7 @@ curl -X GET "http://localhost:8088/exam/list?courseId=92345678" \
     "stage": "archived",
     "score": 85,
     "status": "submitted",
+    "startedAt": 1712345678000,
     ...
   }
 }
@@ -1608,7 +1611,47 @@ curl -X POST "http://localhost:8088/paper/object?id=23456789" \
 
 ---
 
-### 3.26 POST /admin/teacher/create
+### 3.26 DELETE /paper/object
+
+删除指定试卷。仅考试处于 `preparing` 阶段时可删除。
+
+> **需要认证：** 教师（`teacher`）及以上角色，且只能删除自己课程下的试卷。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 试卷展示 ID（9 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 teacher，或非本课程教师） |
+| 404 | - | `{}` | 试卷不存在 |
+| 409 | - | `{}` | 考试不在 `preparing` 阶段，不可删除 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X DELETE "http://localhost:8088/paper/object?id=23456789" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.27 POST /admin/teacher/create
 
 创建教师账号（管理员专用）。
 
@@ -1672,7 +1715,7 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 
 ---
 
-### 3.27 GET /admin/user/list
+### 3.28 GET /admin/user/list
 
 获取所有用户列表。
 
@@ -1731,7 +1774,7 @@ curl -X GET http://localhost:8088/admin/user/list \
 
 ---
 
-### 3.28 GET /admin/user/password
+### 3.29 GET /admin/user/password
 
 重置指定用户的密码为随机密码。
 
@@ -1779,7 +1822,7 @@ curl -X GET "http://localhost:8088/admin/user/password?id=68123457" \
 
 ---
 
-### 3.29 GET /exam/take
+### 3.30 GET /exam/take
 
 学生开始或续考。随机分配试卷，创建提交记录；已有提交则续考。
 
@@ -1818,7 +1861,7 @@ curl -X GET "http://localhost:8088/admin/user/password?id=68123457" \
     "title": "试卷A",
     "questions": [...]
   },
-  "submittedAt": 1712345678000,
+  "startedAt": 1712345678000,
   "submit": false
 }
 ```
@@ -1828,7 +1871,7 @@ curl -X GET "http://localhost:8088/admin/user/password?id=68123457" \
 {
   "exam": {...},
   "paper": {...},
-  "submittedAt": 1712345678000,
+  "startedAt": 1712345678000,
   "submit": false,
   "answers": [1, 0, ["Alice"], ...]
 }
@@ -1856,7 +1899,7 @@ curl -X GET "http://localhost:8088/exam/take?id=19345678" \
 
 ---
 
-### 3.30 POST /exam/submit
+### 3.31 POST /exam/submit
 
 保存草稿或交卷。
 
@@ -1924,7 +1967,7 @@ curl -X POST "http://localhost:8088/exam/submit?id=19345678" \
 
 ---
 
-### 3.31 GET /paper/grade/start
+### 3.32 GET /paper/grade/start
 
 开始批阅试卷。自动评分客观题，主观题标记为 `-1` 待批。
 
@@ -1982,7 +2025,7 @@ curl -X GET "http://localhost:8088/paper/grade/start?id=23456789" \
 
 ---
 
-### 3.32 GET /paper/grade/tasks
+### 3.33 GET /paper/grade/tasks
 
 查看评分进度。竖向统计各主观题已评数量。
 
@@ -2034,7 +2077,7 @@ curl -X GET "http://localhost:8088/paper/grade/tasks?id=23456789" \
 
 ---
 
-### 3.33 GET /paper/grade/next
+### 3.34 GET /paper/grade/next
 
 随机获取一份未评分的主观题作答。
 
@@ -2101,7 +2144,7 @@ curl -X GET "http://localhost:8088/paper/grade/next?id=23456789&questionIndex=7"
 
 ---
 
-### 3.34 POST /paper/grade/score
+### 3.35 POST /paper/grade/score
 
 提交主观题评分。
 
@@ -2167,7 +2210,7 @@ curl -X POST "http://localhost:8088/paper/grade/score?id=23456789" \
 
 ---
 
-### 3.35 GET /paper/grade/finish
+### 3.36 GET /paper/grade/finish
 
 完成评分。校验所有题目已评，计算总分，归档试卷。
 
@@ -2224,7 +2267,7 @@ curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
 
 ---
 
-### 3.36 GET /my
+### 3.37 GET /my
 
 获取当前用户的个性化考试主页，按角色返回不同分类的考试列表。
 
@@ -2294,7 +2337,8 @@ curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
       "duration": 120,
       "createdAt": 1712345678000,
       "score": -1,
-      "status": "not_taken"
+      "status": "not_taken",
+      "startedAt": 0
     }
   ],
   "archived": [
@@ -2310,7 +2354,8 @@ curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
       "duration": 120,
       "createdAt": 1712345678000,
       "score": 85,
-      "status": "submitted"
+      "status": "submitted",
+      "startedAt": 1712345678000
     }
   ],
   "grading": [...]
@@ -2322,6 +2367,7 @@ curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
 | `objects[].courseTitle` | string | 所属课程名称 |
 | `objects[].score` | integer | 考试成绩（学生专有），未归档或无提交时返回 `-1` |
 | `objects[].status` | string | 参与状态（学生专有）：`not_taken` / `in_progress` / `submitted` |
+| `objects[].startedAt` | integer | 开始考试时间（毫秒时间戳，学生专有），未参考时返回 `0` |
 
 #### 错误响应
 

@@ -77,6 +77,15 @@ const PaperTable = {
 
         return Paper.fromRecord(newRaw);
     },
+
+    async dropPaper(paperId) {
+        const [record] = await this.t()
+            .where({ [this.columns.ID]: paperId })
+            .del()
+            .returning('*');
+
+        return Paper.fromRecord(record);
+    },
 };
 
 export default PaperTable;

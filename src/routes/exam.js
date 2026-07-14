@@ -93,6 +93,9 @@ router.get('/object', authenticate, jwtToUser, async (req, res) => {
             summary.status = submission
                 ? (submission.submit ? Submission.Status.SUBMITTED : Submission.Status.IN_PROGRESS)
                 : Submission.Status.NOT_TAKEN;
+            summary.startedAt = submission
+                    ? (submission.startedAt instanceof Date ? submission.startedAt.getTime() : submission.startedAt)
+                : 0;
         }
 
         return res.status(200).send({ code: 0, object: summary });
@@ -187,9 +190,9 @@ router.get('/take', authenticate, authorize(User.Role.STUDENT), jwtToUser, async
                 title: result.paper.title,
                 questions: result.paper.questions,
             },
-            submittedAt: result.submission.submittedAt instanceof Date
-                ? result.submission.submittedAt.getTime()
-                : result.submission.submittedAt,
+            startedAt: result.submission.startedAt instanceof Date
+                ? result.submission.startedAt.getTime()
+                : result.submission.startedAt,
             submit: result.submission.submit,
         };
 

@@ -331,9 +331,9 @@ const ExamService = {
             throw new Error(ExamService.errors.ALREADY_SUBMITTED);
         }
 
-        const deadline = submission.submittedAt instanceof Date
-            ? submission.submittedAt.getTime()
-            : submission.submittedAt;
+        const deadline = submission.startedAt instanceof Date
+            ? submission.startedAt.getTime()
+            : submission.startedAt;
 
         const extra = submit ? ExamService.GRACE_PERIOD : 0;
         if (now > deadline + exam.duration * 60_000 + extra) {

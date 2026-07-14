@@ -6,15 +6,15 @@ export default class Submission {
         SUBMITTED: 'submitted',     // 已提交
     };
 
-    constructor(examId, studentId, paperId, answers, submit, scores, total, submittedAt) {
+    constructor(examId, studentId, paperId, answers, submit, scores, total, startedAt) {
         this.examId = examId;
         this.studentId = studentId;
         this.paperId = paperId;
         this.answers = answers;
-        this.submit = submit; // bool，是否提交。为 false 则为保存而不提交
-        this.scores = scores; // 逐题评分，为 int 数组
+        this.submit = submit;
+        this.scores = scores;
         this.total = total;
-        this.submittedAt = submittedAt;
+        this.startedAt = startedAt;
     }
 
     static fromRecord(record) {
@@ -38,7 +38,7 @@ export default class Submission {
             submit: this.submit,
             scores: this.scores,
             total: this.total,
-            submitted_at: this.submittedAt,
+            submitted_at: this.startedAt,
         };
     }
 }

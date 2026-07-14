@@ -82,6 +82,32 @@ router.get('/object', authenticate, jwtToUser, async (req, res) => {
     }
 });
 
+router.delete('/object', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
+    if (!req.query.id) {
+        return res.status(400).send({});
+    }
+
+    const id = Number.parseInt(req.query.id);
+    if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).send({});
+    }
+
+    try {
+        await PaperService.drop(DisplayableId.fromDisplay(id), req.user);
+        return res.status(200).send({ code: 0 });
+    } catch (e) {
+        if (e.message === PaperService.errors.PAPER_NOT_EXIST) {
+            return res.status(404).send({});
+        } else if (e.message === PaperService.errors.NOT_PREPARING) {
+            return res.status(409).send({});
+        } else if (e.message === PaperService.errors.FORBIDDEN) {
+            return res.status(403).send({});
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
 router.post('/object', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
     if (!req.query.id) {
         return res.status(400).send({});

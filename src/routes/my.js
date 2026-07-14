@@ -86,6 +86,9 @@ router.get('/', authenticate, jwtToUser, async (req, res) => {
                 summary.status = submission
                     ? (submission.submit ? Submission.Status.SUBMITTED : Submission.Status.IN_PROGRESS)
                     : Submission.Status.NOT_TAKEN;
+                summary.startedAt = submission
+                    ? (submission.startedAt instanceof Date ? submission.startedAt.getTime() : submission.startedAt)
+                    : 0;
 
                 if (exam.stage === Exam.Stage.OPENING) {
                     opening.push(summary);
