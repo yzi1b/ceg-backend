@@ -1,6 +1,6 @@
 # CSU Exam God Backend API 文档
 
-> 版本：1.4.0  
+> 版本：1.6.0  
 > 基础路径：`http://localhost:8088`  
 > 协议：HTTP/1.1  
 > 数据格式：JSON
@@ -16,32 +16,36 @@
    - 3.2 [用户注册](#32-post-userregister)
    - 3.3 [刷新 Token](#33-post-userrefresh)
    - 3.4 [修改密码](#34-post-userchangepassword)
-   - 3.5 [创建课程](#35-post-coursecreate)
-   - 3.6 [课程列表](#36-get-courselist)
-   - 3.7 [管理邀请码](#37-post-coursecode)
-   - 3.8 [加入课程](#38-get-coursejoin)
-   - 3.9 [退出课程](#39-delete-coursequit)
-   - 3.10 [踢出学生](#310-delete-coursestudent)
-   - 3.11 [删除课程](#311-delete-courseobject)
-   - 3.12 [创建考试](#312-post-examcreate)
-   - 3.13 [考试列表](#313-get-examlist)
-   - 3.14 [考试详情](#314-get-examobject)
-   - 3.15 [修改考试](#315-post-examobject)
-   - 3.16 [删除考试](#316-delete-examobject)
-   - 3.17 [切换考试阶段](#317-post-examstage)
-   - 3.18 [创建试卷](#318-post-papercreate)
-   - 3.19 [试卷列表](#319-get-paperlist)
-   - 3.20 [试卷详情](#320-get-paperobject)
-   - 3.21 [保存试卷内容](#321-post-paperobject)
-   - 3.22 [创建教师账号](#322-post-adminteachercreate)
-   - 3.23 [开始考试](#323-get-examtake)
-   - 3.24 [提交作答](#324-post-examsubmit)
-   - 3.25 [开始评分](#325-get-papergradestart)
-   - 3.26 [评分概览](#326-get-papergradetasks)
-   - 3.27 [下一份评分](#327-get-papergradenext)
-   - 3.28 [提交评分](#328-post-papergradescore)
-   - 3.29 [完成评分](#329-get-papergradefinish)
-   - 3.30 [我的主页](#330-get-my)
+   - 3.5 [查看用户信息](#35-get-userobject)
+   - 3.6 [更新用户信息](#36-post-userobject)
+   - 3.7 [创建课程](#37-post-coursecreate)
+   - 3.8 [课程列表](#38-get-courselist)
+   - 3.9 [管理邀请码](#39-post-coursecode)
+   - 3.10 [加入课程](#310-get-coursejoin)
+   - 3.11 [退出课程](#311-delete-coursequit)
+   - 3.12 [踢出学生](#312-delete-coursestudent)
+   - 3.13 [删除课程](#313-delete-courseobject)
+   - 3.14 [创建考试](#314-post-examcreate)
+   - 3.15 [考试列表](#315-get-examlist)
+   - 3.16 [考试详情](#316-get-examobject)
+   - 3.17 [修改考试](#317-post-examobject)
+   - 3.18 [删除考试](#318-delete-examobject)
+   - 3.19 [切换考试阶段](#319-post-examstage)
+   - 3.20 [创建试卷](#320-post-papercreate)
+   - 3.21 [试卷列表](#321-get-paperlist)
+   - 3.22 [试卷详情](#322-get-paperobject)
+   - 3.23 [保存试卷内容](#323-post-paperobject)
+   - 3.24 [创建教师账号](#324-post-adminteachercreate)
+   - 3.25 [用户列表](#325-get-adminuserlist)
+   - 3.26 [重置密码](#326-get-adminuserpassword)
+   - 3.27 [开始考试](#327-get-examtake)
+   - 3.28 [提交作答](#328-post-examsubmit)
+   - 3.29 [开始评分](#329-get-papergradestart)
+   - 3.30 [评分概览](#330-get-papergradetasks)
+   - 3.31 [下一份评分](#331-get-papergradenext)
+   - 3.32 [提交评分](#332-post-papergradescore)
+   - 3.33 [完成评分](#333-get-papergradefinish)
+   - 3.34 [我的主页](#334-get-my)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -355,7 +359,145 @@ curl -X POST http://localhost:8088/user/password \
 
 ---
 
-### 3.5 POST /course/create
+### 3.5 GET /user/object
+
+查看用户个人信息。管理员可查看任意用户；课程教师可查看自己课程中的学生；用户可查看本人信息。
+
+> **需要认证：** 需登录。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 用户账号 ID（8 位数字） |
+
+#### 权限说明
+
+| 角色 | 可查看范围 |
+|------|-----------|
+| `admin` | 任意用户 |
+| `teacher` | 自己课程中的学生 |
+| 本人 | 自己的信息 |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "accountId": 10000001,
+    "userName": "johndoe",
+    "role": "student",
+    "fullName": "John Doe",
+    "gender": true,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `object.accountId` | integer | 8 位数字账号 |
+| `object.userName` | string | 用户名 |
+| `object.role` | string | 角色：`student` / `teacher` / `admin` |
+| `object.fullName` | string | 真实姓名 |
+| `object.gender` | boolean | 性别 |
+| `object.createdAt` | integer | 创建时间（毫秒时间戳） |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非管理员、非课程教师、非本人） |
+| 404 | - | `{}` | 用户不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/user/object?id=10000001" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.6 POST /user/object
+
+更新用户个人信息（姓名、性别）。管理员可更新任意用户；用户可更新本人信息。
+
+> **需要认证：** 需登录。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 用户账号 ID（8 位数字） |
+
+#### 请求体
+
+```json
+{
+  "fullName": "张三",
+  "gender": true
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `fullName` | string | 否 | 真实姓名，2-64 个字符，无前导/尾随空格，无连续空格 |
+| `gender` | boolean | 否 | 性别（`true`=男，`false`=女） |
+
+至少需提供一项可修改字段。
+
+#### 权限说明
+
+| 角色 | 可更新范围 |
+|------|-----------|
+| `admin` | 任意用户 |
+| 本人 | 自己的信息 |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "accountId": 10000001,
+    "userName": "johndoe",
+    "role": "student",
+    "fullName": "张三",
+    "gender": true,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失、格式校验不通过或未提供可更新字段 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非管理员且非本人） |
+| 404 | - | `{}` | 用户不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X POST "http://localhost:8088/user/object?id=10000001" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"fullName": "张三", "gender": true}'
+```
+
+---
+
+### 3.7 POST /course/create
 
 创建新课程。
 
@@ -408,7 +550,7 @@ curl -X POST http://localhost:8088/course/create \
 
 ---
 
-### 3.6 GET /course/list
+### 3.8 GET /course/list
 
 获取当前用户的课程列表。教师返回自己创建的课程，学生返回自己加入的课程。
 
@@ -465,7 +607,7 @@ curl -X GET http://localhost:8088/course/list \
 
 ---
 
-### 3.7 POST /course/code
+### 3.9 POST /course/code
 
 刷新或关闭课程邀请码。
 
@@ -537,7 +679,7 @@ curl -X POST http://localhost:8088/course/code \
 
 ---
 
-### 3.8 GET /course/join
+### 3.10 GET /course/join
 
 学生使用邀请码加入课程。
 
@@ -584,7 +726,7 @@ curl -X GET "http://localhost:8088/course/join?code=a1b2c3d4e5f6g7h8" \
 
 ---
 
-### 3.9 DELETE /course/quit
+### 3.11 DELETE /course/quit
 
 学生退出课程。
 
@@ -624,7 +766,7 @@ curl -X DELETE "http://localhost:8088/course/quit?id=92345678" \
 
 ---
 
-### 3.10 DELETE /course/student
+### 3.12 DELETE /course/student
 
 管理员或课程所有者将学生踢出课程。
 
@@ -666,7 +808,7 @@ curl -X DELETE "http://localhost:8088/course/student?id=92345678&studentId=10000
 
 ---
 
-### 3.11 DELETE /course/object
+### 3.13 DELETE /course/object
 
 删除指定课程。
 
@@ -701,7 +843,7 @@ curl -X DELETE "http://localhost:8088/course/object?id=92345678" \
 
 ---
 
-### 3.12 POST /exam/create
+### 3.14 POST /exam/create
 
 创建新考试。
 
@@ -765,7 +907,7 @@ curl -X POST http://localhost:8088/exam/create \
 
 ---
 
-### 3.13 GET /exam/list
+### 3.15 GET /exam/list
 
 获取指定课程下的所有考试列表。
 
@@ -830,7 +972,7 @@ curl -X GET "http://localhost:8088/exam/list?courseId=92345678" \
 
 ---
 
-### 3.14 GET /exam/object
+### 3.16 GET /exam/object
 
 获取指定考试的详细信息。
 
@@ -900,7 +1042,7 @@ curl -X GET "http://localhost:8088/exam/object?id=19345678" \
 
 ---
 
-### 3.15 POST /exam/object
+### 3.17 POST /exam/object
 
 修改考试信息。仅当考试处于 `preparing` 阶段时可修改，否则只能删除。
 
@@ -973,7 +1115,7 @@ curl -X POST http://localhost:8088/exam/object \
 
 ---
 
-### 3.16 DELETE /exam/object
+### 3.18 DELETE /exam/object
 
 删除指定考试。
 
@@ -1012,7 +1154,7 @@ curl -X DELETE "http://localhost:8088/exam/object?id=19345678" \
 
 ---
 
-### 3.17 POST /exam/stage
+### 3.19 POST /exam/stage
 
 切换考试阶段。阶段只能从前往后切换：`preparing` → `opening` → `grading` → `archived`。
 
@@ -1090,7 +1232,7 @@ curl -X POST http://localhost:8088/exam/stage \
 
 ---
 
-### 3.18 POST /paper/create
+### 3.20 POST /paper/create
 
 创建新试卷（空白）。
 
@@ -1147,7 +1289,7 @@ curl -X POST http://localhost:8088/paper/create \
 
 ---
 
-### 3.19 GET /paper/list
+### 3.21 GET /paper/list
 
 获取指定考试下的所有试卷基本信息列表。
 
@@ -1204,7 +1346,7 @@ curl -X GET "http://localhost:8088/paper/list?examId=19345678" \
 
 ---
 
-### 3.20 GET /paper/object
+### 3.22 GET /paper/object
 
 获取指定试卷的完整信息（含题目和答案）。
 
@@ -1263,7 +1405,7 @@ curl -X GET "http://localhost:8088/paper/object?id=23456789" \
 
 ---
 
-### 3.21 POST /paper/object
+### 3.23 POST /paper/object
 
 覆盖保存试卷的题目和答案。每次调用会完全替换原有的题目和答案数组。
 
@@ -1351,7 +1493,7 @@ curl -X POST "http://localhost:8088/paper/object?id=23456789" \
 
 ---
 
-### 3.22 POST /admin/teacher/create
+### 3.24 POST /admin/teacher/create
 
 创建教师账号（管理员专用）。
 
@@ -1415,7 +1557,114 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 
 ---
 
-### 3.23 GET /exam/take
+### 3.25 GET /admin/user/list
+
+获取所有用户列表。
+
+> **需要认证：** 管理员（`admin`）角色。
+
+#### 查询参数
+
+无。
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "objects": [
+    {
+      "accountId": 10000001,
+      "userName": "admin",
+      "role": "admin",
+      "fullName": "Admin",
+      "gender": true,
+      "createdAt": 1712345678000
+    },
+    {
+      "accountId": 68123457,
+      "userName": "johndoe",
+      "role": "student",
+      "fullName": "John Doe",
+      "gender": true,
+      "createdAt": 1712345678000
+    }
+  ],
+  "count": 2
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `objects` | array | 用户信息数组（格式同 [GET /user/object](#35-get-userobject)） |
+| `count` | integer | 用户总数 |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 admin） |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET http://localhost:8088/admin/user/list \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.26 GET /admin/user/password
+
+重置指定用户的密码为随机密码。
+
+> **需要认证：** 管理员（`admin`）角色。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 用户账号 ID（8 位数字） |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "accountId": 68123457,
+  "userName": "johndoe",
+  "password": "A1b2C3d4E5f6G7h8"
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `accountId` | integer | 用户账号 ID |
+| `userName` | string | 用户名 |
+| `password` | string | 新的随机密码（16 位，含字母、数字、符号） |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失或格式错误 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 admin） |
+| 404 | - | `{}` | 用户不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET "http://localhost:8088/admin/user/password?id=68123457" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.27 GET /exam/take
 
 学生开始或续考。随机分配试卷，创建提交记录；已有提交则续考。
 
@@ -1492,7 +1741,7 @@ curl -X GET "http://localhost:8088/exam/take?id=19345678" \
 
 ---
 
-### 3.24 POST /exam/submit
+### 3.28 POST /exam/submit
 
 保存草稿或交卷。
 
@@ -1560,7 +1809,7 @@ curl -X POST "http://localhost:8088/exam/submit?id=19345678" \
 
 ---
 
-### 3.25 GET /paper/grade/start
+### 3.29 GET /paper/grade/start
 
 开始批阅试卷。自动评分客观题，主观题标记为 `-1` 待批。
 
@@ -1618,7 +1867,7 @@ curl -X GET "http://localhost:8088/paper/grade/start?id=23456789" \
 
 ---
 
-### 3.26 GET /paper/grade/tasks
+### 3.30 GET /paper/grade/tasks
 
 查看评分进度。竖向统计各主观题已评数量。
 
@@ -1670,7 +1919,7 @@ curl -X GET "http://localhost:8088/paper/grade/tasks?id=23456789" \
 
 ---
 
-### 3.27 GET /paper/grade/next
+### 3.31 GET /paper/grade/next
 
 随机获取一份未评分的主观题作答。
 
@@ -1737,7 +1986,7 @@ curl -X GET "http://localhost:8088/paper/grade/next?id=23456789&questionIndex=7"
 
 ---
 
-### 3.28 POST /paper/grade/score
+### 3.32 POST /paper/grade/score
 
 提交主观题评分。
 
@@ -1803,7 +2052,7 @@ curl -X POST "http://localhost:8088/paper/grade/score?id=23456789" \
 
 ---
 
-### 3.29 GET /paper/grade/finish
+### 3.33 GET /paper/grade/finish
 
 完成评分。校验所有题目已评，计算总分，归档试卷。
 
@@ -1860,7 +2109,7 @@ curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
 
 ---
 
-### 3.30 GET /my
+### 3.34 GET /my
 
 获取当前用户的个性化考试主页，按角色返回不同分类的考试列表。
 

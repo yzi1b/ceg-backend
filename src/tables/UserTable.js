@@ -66,6 +66,11 @@ const UserTable = {
         return User.fromRecord(raw);
     },
 
+    async listAll() {
+        const raws = await this.t();
+        return raws.map(User.fromRecord);
+    },
+
     async hasAdmin() {
         return this.t().where(this.columns.ROLE, User.Role.ADMIN).first();
     },

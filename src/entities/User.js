@@ -57,4 +57,15 @@ export default class User {
             getRandomInt(ACCOUNT_ID_MIN, ACCOUNT_ID_MAX + 1),
             userName, password, role, fullName, gender, 0, 0);
     }
+
+    toJson() {
+        return {
+            accountId: this.accountId,
+            userName: this.userName,
+            role: this.role,
+            fullName: this.fullName,
+            gender: this.gender,
+            createdAt: this.createdAt instanceof Date ? this.createdAt.getTime() : this.createdAt,
+        };
+    }
 }
