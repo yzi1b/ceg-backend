@@ -349,11 +349,20 @@ const PaperService = {
             submissionId, questionIndex, visitor.id, 3_600_000
         ).toToken();
 
+        let graded = 0;
+        for (const sub of paperSubmissions) {
+            if (sub.scores?.[questionIndex] !== undefined && sub.scores[questionIndex] !== -1) {
+                graded++;
+            }
+        }
+
         return {
             found: true,
             question: paper.questions[questionIndex],
             answer: target.answers ? target.answers[questionIndex] : null,
             token,
+            total: paperSubmissions.length,
+            graded,
         };
     },
 

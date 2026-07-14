@@ -2111,7 +2111,9 @@ curl -X GET "http://localhost:8088/paper/grade/tasks?id=23456789" \
     "full": 10
   },
   "answer": "物体在不受力时保持静止...",
-  "token": "aes256gcm_encrypted_token"
+  "token": "aes256gcm_encrypted_token",
+  "total": 64,
+  "graded": 5
 }
 ```
 
@@ -2125,6 +2127,15 @@ curl -X GET "http://localhost:8088/paper/grade/tasks?id=23456789" \
   "token": null
 }
 ```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `found` | boolean | 是否有未评分的主观题 |
+| `question` | object/null | 题目对象，`found=false` 时为 `null` |
+| `answer` | string/null | 学生作答，`found=false` 时为 `null` |
+| `token` | string/null | 评分令牌（AES-256-GCM 加密），`found=false` 时为 `null` |
+| `total` | integer | 该试卷总提交数 |
+| `graded` | integer | 该题已评数量 |
 
 #### 错误响应
 
