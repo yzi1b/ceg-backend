@@ -16,13 +16,14 @@ export default class ShortAnswerQuestion extends AbstractSubjectiveQuestion {
     }
 
     static from(qObj, aObj) {
-        const { content, full } = qObj;
+        const { content, score, full } = qObj;
+        const questionFull = score ?? full;
 
         if (!stringUsable(content)) {
             throw new Error(AbstractQuestion.errors.QUESTION_INVALID);
         }
 
-        if (!Number.isInteger(full) || full <= 0) {
+        if (!Number.isInteger(questionFull) || questionFull <= 0) {
             throw new Error(AbstractQuestion.errors.QUESTION_INVALID);
         }
 
@@ -30,14 +31,14 @@ export default class ShortAnswerQuestion extends AbstractSubjectiveQuestion {
             throw new Error(AbstractQuestion.errors.ANSWER_INVALID);
         }
 
-        return new ShortAnswerQuestion(content, full, aObj);
+        return new ShortAnswerQuestion(content, questionFull, aObj);
     }
 
     toQObj() {
         return {
             type: ShortAnswerQuestion.TYPE,
             content: this.content,
-            full: this.getFull(),
+            score: this.getFull(),
         };
     }
 

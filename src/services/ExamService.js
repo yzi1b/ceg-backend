@@ -3,6 +3,7 @@ import ExamTable from "../tables/ExamTable.js";
 import CourseTable from "../tables/CourseTable.js";
 import User from "../entities/User.js";
 import PaperTable from "../tables/PaperTable.js";
+import Paper from "../entities/Paper.js";
 import PaperContent from "../objects/PaperContent.js";
 import CourseMemberTable from "../tables/CourseMemberTable.js";
 import SubmissionTable from "../tables/SubmissionTable.js";

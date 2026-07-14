@@ -437,6 +437,9 @@ const PaperService = {
         PaperService.assertGradable(paper);
 
         const exam = await ExamTable.getExamById(paper.examId);
+        if (!exam) {
+            throw new Error(PaperService.errors.EXAM_NOT_EXIST);
+        }
         const course = await CourseTable.getCourseById(exam.courseId);
         if (!course || course.owner !== visitor.id) {
             throw new Error(PaperService.errors.FORBIDDEN);

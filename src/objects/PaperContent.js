@@ -15,6 +15,7 @@ export default class PaperContent {
 
     static errors = {
         QUESTION_PHASE_ERROR: 'question_phase_error',
+        ANSWER_INVALID: 'answer_invalid',
     }
 
     constructor(questions) {
