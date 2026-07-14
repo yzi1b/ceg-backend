@@ -63,6 +63,14 @@ const ExamTable = {
         return raws.map(Exam.fromRecord);
     },
 
+    async listExamsByCourseIds(courseIds) {
+        const raws = await this.t()
+            .whereIn(this.columns.COURSE_ID, courseIds)
+            .orderBy(this.columns.STARTS_AT, 'asc')
+            .orderBy(this.columns.ID, 'asc');
+        return raws.map(Exam.fromRecord);
+    },
+
     async updateExam(exam) {
         const raw = exam.toRecord();
         raw.updated_at = new Date();

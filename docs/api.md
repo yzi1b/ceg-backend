@@ -1,6 +1,6 @@
 # CSU Exam God Backend API 文档
 
-> 版本：1.3.0  
+> 版本：1.4.0  
 > 基础路径：`http://localhost:8088`  
 > 协议：HTTP/1.1  
 > 数据格式：JSON
@@ -41,6 +41,7 @@
    - 3.27 [下一份评分](#327-get-papergradenext)
    - 3.28 [提交评分](#328-post-papergradescore)
    - 3.29 [完成评分](#329-get-papergradefinish)
+   - 3.30 [我的主页](#330-get-my)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -1854,6 +1855,121 @@ paper: (objecting | grading) → calculating → archived
 
 ```bash
 curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.30 GET /my
+
+获取当前用户的个性化考试主页，按角色返回不同分类的考试列表。
+
+> **需要认证：** 需登录。
+
+#### 查询参数
+
+无。
+
+#### 教师响应
+
+考试按以下分组返回，每组内按开始时间升序排列：
+
+| 分组 | 说明 |
+|------|------|
+| `opening` | 进行中的考试 |
+| `grading` | 批改中的考试 |
+| `preparing` | 准备中的考试 |
+
+```json
+{
+  "code": 0,
+  "opening": [
+    {
+      "id": 19345678,
+      "courseId": 92345678,
+      "courseTitle": "高等数学",
+      "title": "期中考试",
+      "full": 100,
+      "stage": "opening",
+      "startsAt": 1712345678000,
+      "endsAt": 1712432078000,
+      "duration": 120,
+      "createdAt": 1712345678000
+    }
+  ],
+  "grading": [...],
+  "preparing": [...]
+}
+```
+
+#### 学生响应
+
+考试按以下分组返回，每组内按开始时间升序排列：
+
+| 分组 | 说明 |
+|------|------|
+| `opening` | 进行中的考试 |
+| `archived` | 近一周内结束的归档考试 |
+| `grading` | 批改中的考试 |
+
+每个考试项额外包含 `score` 和 `status` 字段。
+
+```json
+{
+  "code": 0,
+  "opening": [
+    {
+      "id": 19345678,
+      "courseId": 92345678,
+      "courseTitle": "高等数学",
+      "title": "期中考试",
+      "full": 100,
+      "stage": "opening",
+      "startsAt": 1712345678000,
+      "endsAt": 1712432078000,
+      "duration": 120,
+      "createdAt": 1712345678000,
+      "score": -1,
+      "status": "not_taken"
+    }
+  ],
+  "archived": [
+    {
+      "id": 19345679,
+      "courseId": 92345678,
+      "courseTitle": "高等数学",
+      "title": "期末考",
+      "full": 100,
+      "stage": "archived",
+      "startsAt": 1712345678000,
+      "endsAt": 1712432078000,
+      "duration": 120,
+      "createdAt": 1712345678000,
+      "score": 85,
+      "status": "submitted"
+    }
+  ],
+  "grading": [...]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `objects[].courseTitle` | string | 所属课程名称 |
+| `objects[].score` | integer | 考试成绩（学生专有），未归档或无提交时返回 `-1` |
+| `objects[].status` | string | 参与状态（学生专有）：`not_taken` / `in_progress` / `submitted` |
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X GET http://localhost:8088/my \
   -H "Authorization: Bearer <token>"
 ```
 
