@@ -117,6 +117,32 @@ router.post('/code', authenticate, authorize(User.Role.TEACHER, User.Role.ADMIN)
     }
 });
 
+router.post('/object', authenticate, authorize(User.Role.TEACHER, User.Role.ADMIN), jwtToUser, async (req, res) => {
+    if (!req.body || !req.body.id || !stringUsable(req.body.title)) {
+        return res.status(400).send({});
+    }
+
+    const courseId = DisplayableId.fromDisplay(req.body.id);
+    if (!courseId.isValid()) {
+        return res.status(400).send({});
+    }
+
+    try {
+        const course = await CourseService.rename(courseId, req.user, req.body.title);
+        return res.status(200).send({code: 0, object: course.toJsonSummary()});
+    } catch (e) {
+        if (e.message === CourseService.errors.COURSE_NOT_EXIST) {
+            return res.status(404).send({});
+        } else if (e.message === CourseService.errors.COURSE_NOT_OWNED) {
+            return res.status(403).send({});
+        } else if (e.message === CourseService.errors.TITLE_INVALID) {
+            return res.status(400).send({});
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
 router.delete('/object', authenticate, authorize(User.Role.TEACHER), jwtToUser, async (req, res) => {
     if (!req.query.id) {
         return res.status(400).send({});

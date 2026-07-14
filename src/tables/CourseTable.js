@@ -78,6 +78,20 @@ const CourseTable = {
         return raw ? Course.fromRecord(raw) : null;
     },
 
+    async updateCourse(course) {
+        const raw = course.toRecord();
+        delete raw.id;
+        delete raw.created_at;
+        raw.updated_at = new Date();
+
+        const [newRaw] = await this.t()
+            .where({ [this.columns.ID]: course.id.raw() })
+            .update(raw)
+            .returning('*');
+
+        return Course.fromRecord(newRaw);
+    },
+
     async listCoursesByStudent(studentId) {
         const raws = await this.t()
             .join('course_members', 'courses.id', 'course_members.course_id')

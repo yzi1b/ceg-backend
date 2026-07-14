@@ -1,6 +1,6 @@
 # CSU Exam God Backend API 文档
 
-> 版本：1.6.0  
+> 版本：1.7.0  
 > 基础路径：`http://localhost:8088`  
 > 协议：HTTP/1.1  
 > 数据格式：JSON
@@ -25,27 +25,28 @@
    - 3.11 [退出课程](#311-delete-coursequit)
    - 3.12 [踢出学生](#312-delete-coursestudent)
    - 3.13 [删除课程](#313-delete-courseobject)
-   - 3.14 [创建考试](#314-post-examcreate)
-   - 3.15 [考试列表](#315-get-examlist)
-   - 3.16 [考试详情](#316-get-examobject)
-   - 3.17 [修改考试](#317-post-examobject)
-   - 3.18 [删除考试](#318-delete-examobject)
-   - 3.19 [切换考试阶段](#319-post-examstage)
-   - 3.20 [创建试卷](#320-post-papercreate)
-   - 3.21 [试卷列表](#321-get-paperlist)
-   - 3.22 [试卷详情](#322-get-paperobject)
-   - 3.23 [保存试卷内容](#323-post-paperobject)
-   - 3.24 [创建教师账号](#324-post-adminteachercreate)
-   - 3.25 [用户列表](#325-get-adminuserlist)
-   - 3.26 [重置密码](#326-get-adminuserpassword)
-   - 3.27 [开始考试](#327-get-examtake)
-   - 3.28 [提交作答](#328-post-examsubmit)
-   - 3.29 [开始评分](#329-get-papergradestart)
-   - 3.30 [评分概览](#330-get-papergradetasks)
-   - 3.31 [下一份评分](#331-get-papergradenext)
-   - 3.32 [提交评分](#332-post-papergradescore)
-   - 3.33 [完成评分](#333-get-papergradefinish)
-   - 3.34 [我的主页](#334-get-my)
+   - 3.14 [修改课程](#314-post-courseobject)
+   - 3.15 [创建考试](#315-post-examcreate)
+   - 3.16 [考试列表](#316-get-examlist)
+   - 3.17 [考试详情](#317-get-examobject)
+   - 3.18 [修改考试](#318-post-examobject)
+   - 3.19 [删除考试](#319-delete-examobject)
+   - 3.20 [切换考试阶段](#320-post-examstage)
+   - 3.21 [创建试卷](#321-post-papercreate)
+   - 3.22 [试卷列表](#322-get-paperlist)
+   - 3.23 [试卷详情](#323-get-paperobject)
+   - 3.24 [保存试卷内容](#324-post-paperobject)
+   - 3.25 [创建教师账号](#325-post-adminteachercreate)
+   - 3.26 [用户列表](#326-get-adminuserlist)
+   - 3.27 [重置密码](#327-get-adminuserpassword)
+   - 3.28 [开始考试](#328-get-examtake)
+   - 3.29 [提交作答](#329-post-examsubmit)
+   - 3.30 [开始评分](#330-get-papergradestart)
+   - 3.31 [评分概览](#331-get-papergradetasks)
+   - 3.32 [下一份评分](#332-get-papergradenext)
+   - 3.33 [提交评分](#333-post-papergradescore)
+   - 3.34 [完成评分](#334-get-papergradefinish)
+   - 3.35 [我的主页](#335-get-my)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -843,7 +844,65 @@ curl -X DELETE "http://localhost:8088/course/object?id=92345678" \
 
 ---
 
-### 3.14 POST /exam/create
+### 3.14 POST /course/object
+
+修改课程名称。教师只能修改自己创建的课程，管理员可修改任意课程。
+
+> **需要认证：** 教师（`teacher`）及以上角色。
+
+#### 请求体
+
+```json
+{
+  "id": 92345678,
+  "title": "高等数学（上）"
+}
+```
+
+#### 参数说明
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 课程展示 ID（9 位数字） |
+| `title` | string | 是 | 新课程标题，2-32 个字符，无前导/尾随空格，无连续空格 |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0,
+  "object": {
+    "id": 92345678,
+    "title": "高等数学（上）",
+    "inviteCode": "a1b2c3d4e5f6g7h8",
+    "inviteCodeExpiresAt": 1712349278000,
+    "createdAt": 1712345678000
+  }
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失、ID 无效或标题格式校验不通过 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非教师且非管理员，或非本课程教师） |
+| 404 | - | `{}` | 课程不存在 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X POST http://localhost:8088/course/object \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"id": 92345678, "title": "高等数学（上）"}'
+```
+
+---
+
+### 3.15 POST /exam/create
 
 创建新考试。
 
@@ -907,7 +966,7 @@ curl -X POST http://localhost:8088/exam/create \
 
 ---
 
-### 3.15 GET /exam/list
+### 3.16 GET /exam/list
 
 获取指定课程下的所有考试列表。
 
@@ -972,7 +1031,7 @@ curl -X GET "http://localhost:8088/exam/list?courseId=92345678" \
 
 ---
 
-### 3.16 GET /exam/object
+### 3.17 GET /exam/object
 
 获取指定考试的详细信息。
 
@@ -1042,7 +1101,7 @@ curl -X GET "http://localhost:8088/exam/object?id=19345678" \
 
 ---
 
-### 3.17 POST /exam/object
+### 3.18 POST /exam/object
 
 修改考试信息。仅当考试处于 `preparing` 阶段时可修改，否则只能删除。
 
@@ -1115,7 +1174,7 @@ curl -X POST http://localhost:8088/exam/object \
 
 ---
 
-### 3.18 DELETE /exam/object
+### 3.19 DELETE /exam/object
 
 删除指定考试。
 
@@ -1154,7 +1213,7 @@ curl -X DELETE "http://localhost:8088/exam/object?id=19345678" \
 
 ---
 
-### 3.19 POST /exam/stage
+### 3.20 POST /exam/stage
 
 切换考试阶段。阶段只能从前往后切换：`preparing` → `opening` → `grading` → `archived`。
 
@@ -1232,7 +1291,7 @@ curl -X POST http://localhost:8088/exam/stage \
 
 ---
 
-### 3.20 POST /paper/create
+### 3.21 POST /paper/create
 
 创建新试卷（空白）。
 
@@ -1289,7 +1348,7 @@ curl -X POST http://localhost:8088/paper/create \
 
 ---
 
-### 3.21 GET /paper/list
+### 3.22 GET /paper/list
 
 获取指定考试下的所有试卷基本信息列表。
 
@@ -1346,7 +1405,7 @@ curl -X GET "http://localhost:8088/paper/list?examId=19345678" \
 
 ---
 
-### 3.22 GET /paper/object
+### 3.23 GET /paper/object
 
 获取指定试卷的完整信息（含题目和答案）。
 
@@ -1405,7 +1464,7 @@ curl -X GET "http://localhost:8088/paper/object?id=23456789" \
 
 ---
 
-### 3.23 POST /paper/object
+### 3.24 POST /paper/object
 
 覆盖保存试卷的题目和答案。每次调用会完全替换原有的题目和答案数组。
 
@@ -1493,7 +1552,7 @@ curl -X POST "http://localhost:8088/paper/object?id=23456789" \
 
 ---
 
-### 3.24 POST /admin/teacher/create
+### 3.25 POST /admin/teacher/create
 
 创建教师账号（管理员专用）。
 
@@ -1557,7 +1616,7 @@ curl -X POST http://localhost:8088/admin/teacher/create \
 
 ---
 
-### 3.25 GET /admin/user/list
+### 3.26 GET /admin/user/list
 
 获取所有用户列表。
 
@@ -1616,7 +1675,7 @@ curl -X GET http://localhost:8088/admin/user/list \
 
 ---
 
-### 3.26 GET /admin/user/password
+### 3.27 GET /admin/user/password
 
 重置指定用户的密码为随机密码。
 
@@ -1664,7 +1723,7 @@ curl -X GET "http://localhost:8088/admin/user/password?id=68123457" \
 
 ---
 
-### 3.27 GET /exam/take
+### 3.28 GET /exam/take
 
 学生开始或续考。随机分配试卷，创建提交记录；已有提交则续考。
 
@@ -1741,7 +1800,7 @@ curl -X GET "http://localhost:8088/exam/take?id=19345678" \
 
 ---
 
-### 3.28 POST /exam/submit
+### 3.29 POST /exam/submit
 
 保存草稿或交卷。
 
@@ -1809,7 +1868,7 @@ curl -X POST "http://localhost:8088/exam/submit?id=19345678" \
 
 ---
 
-### 3.29 GET /paper/grade/start
+### 3.30 GET /paper/grade/start
 
 开始批阅试卷。自动评分客观题，主观题标记为 `-1` 待批。
 
@@ -1867,7 +1926,7 @@ curl -X GET "http://localhost:8088/paper/grade/start?id=23456789" \
 
 ---
 
-### 3.30 GET /paper/grade/tasks
+### 3.31 GET /paper/grade/tasks
 
 查看评分进度。竖向统计各主观题已评数量。
 
@@ -1919,7 +1978,7 @@ curl -X GET "http://localhost:8088/paper/grade/tasks?id=23456789" \
 
 ---
 
-### 3.31 GET /paper/grade/next
+### 3.32 GET /paper/grade/next
 
 随机获取一份未评分的主观题作答。
 
@@ -1986,7 +2045,7 @@ curl -X GET "http://localhost:8088/paper/grade/next?id=23456789&questionIndex=7"
 
 ---
 
-### 3.32 POST /paper/grade/score
+### 3.33 POST /paper/grade/score
 
 提交主观题评分。
 
@@ -2052,7 +2111,7 @@ curl -X POST "http://localhost:8088/paper/grade/score?id=23456789" \
 
 ---
 
-### 3.33 GET /paper/grade/finish
+### 3.34 GET /paper/grade/finish
 
 完成评分。校验所有题目已评，计算总分，归档试卷。
 
@@ -2109,7 +2168,7 @@ curl -X GET "http://localhost:8088/paper/grade/finish?id=23456789" \
 
 ---
 
-### 3.34 GET /my
+### 3.35 GET /my
 
 获取当前用户的个性化考试主页，按角色返回不同分类的考试列表。
 

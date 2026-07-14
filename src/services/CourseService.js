@@ -200,6 +200,30 @@ const CourseService = {
         }
     },
 
+    rename: async function(courseId, visitor, newTitle) {
+        if (!courseId.isValid()) {
+            throw new Error(CourseService.errors.COURSE_NOT_EXIST);
+        }
+
+        if (!Course.patterns.TITLE.test(newTitle)) {
+            throw new Error(CourseService.errors.TITLE_INVALID);
+        }
+
+        const course = await CourseTable.getCourseById(courseId.raw());
+
+        if (!course) {
+            throw new Error(CourseService.errors.COURSE_NOT_EXIST);
+        }
+
+        if (visitor.role !== User.Role.ADMIN && course.owner !== visitor.id) {
+            throw new Error(CourseService.errors.COURSE_NOT_OWNED);
+        }
+
+        course.title = newTitle;
+
+        return await CourseTable.updateCourse(course);
+    },
+
     hasPermission: async function(course, visitor) {
         if (visitor.role === User.Role.ADMIN) {
             return true;
