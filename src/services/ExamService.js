@@ -234,11 +234,12 @@ const ExamService = {
                 paperInfos.push({ paperId: paper.id.toDisplay(), full: content.getFull() });
             }
 
-            const totalFull = paperInfos.reduce((sum, p) => sum + p.full, 0);
-            if (totalFull !== exam.full) {
-                const err = new Error(ExamService.errors.FULL_MISMATCH);
-                err.papers = paperInfos;
-                throw err;
+            for (const p of paperInfos) {
+                if (p.full !== exam.full) {
+                    const err = new Error(ExamService.errors.FULL_MISMATCH);
+                    err.papers = paperInfos;
+                    throw err;
+                }
             }
         }
 

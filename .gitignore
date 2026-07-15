@@ -41,3 +41,6 @@ build/
 # Miscellaneous
 *.tgz
 .eslintcache
+
+# dev
+testAccouts.csv
