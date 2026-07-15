@@ -102,6 +102,10 @@ const UserTable = {
             .returning('*');
 
         return User.fromRecord(User.fromRecord(updatedRaw));
+    },
+
+    async dropUser(id) {
+        await this.t().where(this.columns.ID, id).del();
     }
 };
 

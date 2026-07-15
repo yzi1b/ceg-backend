@@ -50,6 +50,8 @@
    - 3.36 [完成评分](#336-get-papergradefinish)
    - 3.37 [我的主页](#337-get-my)
    - 3.38 [考试成绩](#338-get-examscores)
+   - 3.39 [删除教师](#339-delete-adminteacher)
+   - 3.40 [注销账户](#340-delete-userobject)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
 6. [环境配置](#6-环境配置)
@@ -2473,6 +2475,91 @@ curl -X GET http://localhost:8088/my \
 
 ```bash
 curl -X GET "http://localhost:8088/exam/scores?id=19345678" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.39 DELETE /admin/teacher
+
+管理员删除教师账号及其所有课程。
+
+> **需要认证：** 管理员（`admin`）角色。
+
+#### 查询参数
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | integer | 是 | 教师账号 ID（8 位数字） |
+
+#### 行为说明
+
+删除教师时会同时删除其创建的所有课程（课程下的考试、试卷、提交记录等随之级联删除）。
+
+管理员不能删除自己的账号。
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 400 | - | `{}` | 参数缺失、格式错误或目标用户非教师 |
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（非 admin） |
+| 404 | - | `{}` | 用户不存在 |
+| 200 | 1 | `cannot delete yourself` | 不能删除自己 |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X DELETE "http://localhost:8088/admin/teacher?id=68123457" \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 3.40 DELETE /user/object
+
+用户注销自己的账户。管理员不能通过此接口注销。
+
+> **需要认证：** 需登录。
+
+#### 行为说明
+
+| 角色 | 清理内容 |
+|------|---------|
+| `student` | 删除课程成员记录、考试提交记录，然后注销 |
+| `teacher` | 删除名下所有课程（考试、试卷、提交记录等级联删除），然后注销 |
+| `admin` | **不允许**注销 |
+
+#### 成功响应（200）
+
+```json
+{
+  "code": 0
+}
+```
+
+#### 错误响应
+
+| HTTP 状态码 | code | msg | 说明 |
+|-------------|------|-----|------|
+| 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
+| 403 | -1 | `permission required` | 权限不足（管理员不能注销自己） |
+| 500 | - | `{}` | 服务器内部错误 |
+
+#### 调用示例
+
+```bash
+curl -X DELETE http://localhost:8088/user/object \
   -H "Authorization: Bearer <token>"
 ```
 

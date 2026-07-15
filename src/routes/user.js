@@ -150,6 +150,19 @@ router.get('/object', authenticate, jwtToUser, async (req, res) => {
     }
 });
 
+router.delete('/object', authenticate, jwtToUser, async (req, res) => {
+    try {
+        await UserService.deleteSelf(req.user);
+        return res.status(200).send({ code: 0 });
+    } catch (e) {
+        if (e.message === UserService.errors.FORBIDDEN) {
+            return res.status(403).send({});
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
 router.post('/object', authenticate, jwtToUser, async (req, res) => {
     if (!req.query.id || !req.body) {
         return res.status(400).send({});

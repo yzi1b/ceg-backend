@@ -1,6 +1,8 @@
 import UserTable from "../tables/UserTable.js";
 import User from "../entities/User.js";
 import Password from "../objects/Password.js";
+import CourseTable from "../tables/CourseTable.js";
+import db from "../db.js";
 
 const UserService = {
     errors: {
@@ -9,6 +11,7 @@ const UserService = {
         PASSWORD_NOT_STRONG: 'password is not strong enough',
         PASSWORD_IS_WRONG: 'password is wrong',
         USER_NOT_EXIST: 'user does not exist',
+        FORBIDDEN: 'you do not have permission',
     },
 
     async register(userName, password, fullName, gender) {
@@ -63,6 +66,24 @@ const UserService = {
         user.password = Password.fromInput(newPassword);
 
         return await UserTable.updateUser(user);
+    },
+
+    async deleteSelf(visitor) {
+        if (visitor.role === User.Role.ADMIN) {
+            throw new Error(UserService.errors.FORBIDDEN);
+        }
+
+        if (visitor.role === User.Role.TEACHER) {
+            const courses = await db('courses').where('owner', visitor.id);
+            for (const course of courses) {
+                await CourseTable.dropCourse(course.id);
+            }
+        } else {
+            await db('course_members').where('student_id', visitor.id).del();
+            await db('submissions').where('student_id', visitor.id).del();
+        }
+
+        await UserTable.dropUser(visitor.id);
     }
 };
 

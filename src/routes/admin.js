@@ -51,6 +51,32 @@ router.get('/user/list', authenticate, authorize(User.Role.ADMIN), async (req, r
     }
 });
 
+router.delete('/teacher', authenticate, authorize(User.Role.ADMIN), async (req, res) => {
+    if (!req.query.id) {
+        return res.status(400).send({});
+    }
+
+    const accountId = Number.parseInt(req.query.id);
+    if (!Number.isInteger(accountId) || accountId < 10000000 || accountId > 99999999) {
+        return res.status(400).send({});
+    }
+
+    try {
+        await AdminService.deleteTeacher(accountId, req.jwt.getAccountId());
+        return res.status(200).send({ code: 0 });
+    } catch (e) {
+        if (e.message === AdminService.errors.USER_NOT_EXIST) {
+            return res.status(404).send({});
+        } else if (e.message === AdminService.errors.NOT_TEACHER) {
+            return res.status(400).send({});
+        } else if (e.message === AdminService.errors.CANNOT_DELETE_SELF) {
+            return res.status(200).send({ code: 1, msg: 'cannot delete yourself' });
+        } else {
+            return res.status(500).send({});
+        }
+    }
+});
+
 router.get('/user/password', authenticate, authorize(User.Role.ADMIN), async (req, res) => {
     if (!req.query.id) {
         return res.status(400).send({});
