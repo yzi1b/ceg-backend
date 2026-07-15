@@ -50,7 +50,7 @@
    - 3.36 [完成评分](#336-get-papergradefinish)
    - 3.37 [我的主页](#337-get-my)
    - 3.38 [考试成绩](#338-get-examscores)
-   - 3.39 [删除教师](#339-delete-adminteacher)
+   - 3.39 [删除用户](#339-delete-adminuser)
    - 3.40 [注销账户](#340-delete-userobject)
 4. [错误码说明](#4-错误码说明)
 5. [数据模型](#5-数据模型)
@@ -2480,9 +2480,9 @@ curl -X GET "http://localhost:8088/exam/scores?id=19345678" \
 
 ---
 
-### 3.39 DELETE /admin/teacher
+### 3.39 DELETE /admin/user
 
-管理员删除教师账号及其所有课程。
+管理员删除用户账号。
 
 > **需要认证：** 管理员（`admin`）角色。
 
@@ -2490,11 +2490,14 @@ curl -X GET "http://localhost:8088/exam/scores?id=19345678" \
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `id` | integer | 是 | 教师账号 ID（8 位数字） |
+| `id` | integer | 是 | 用户账号 ID（8 位数字） |
 
 #### 行为说明
 
-删除教师时会同时删除其创建的所有课程（课程下的考试、试卷、提交记录等随之级联删除）。
+| 目标角色 | 清理内容 |
+|---------|---------|
+| `teacher` | 删除名下所有课程（考试、试卷、提交记录等级联删除） |
+| `student` | 删除课程成员记录、考试提交记录 |
 
 管理员不能删除自己的账号。
 
@@ -2510,7 +2513,7 @@ curl -X GET "http://localhost:8088/exam/scores?id=19345678" \
 
 | HTTP 状态码 | code | msg | 说明 |
 |-------------|------|-----|------|
-| 400 | - | `{}` | 参数缺失、格式错误或目标用户非教师 |
+| 400 | - | `{}` | 参数缺失、格式错误或目标用户为管理员 |
 | 401 | -1 | `token is not provided, invalid or expired` | 未认证 |
 | 403 | -1 | `permission required` | 权限不足（非 admin） |
 | 404 | - | `{}` | 用户不存在 |
@@ -2520,7 +2523,12 @@ curl -X GET "http://localhost:8088/exam/scores?id=19345678" \
 #### 调用示例
 
 ```bash
-curl -X DELETE "http://localhost:8088/admin/teacher?id=68123457" \
+# 删除教师
+curl -X DELETE "http://localhost:8088/admin/user?id=68123457" \
+  -H "Authorization: Bearer <token>"
+
+# 删除学生
+curl -X DELETE "http://localhost:8088/admin/user?id=12345678" \
   -H "Authorization: Bearer <token>"
 ```
 

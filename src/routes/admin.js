@@ -51,7 +51,7 @@ router.get('/user/list', authenticate, authorize(User.Role.ADMIN), async (req, r
     }
 });
 
-router.delete('/teacher', authenticate, authorize(User.Role.ADMIN), async (req, res) => {
+router.delete('/user', authenticate, authorize(User.Role.ADMIN), async (req, res) => {
     if (!req.query.id) {
         return res.status(400).send({});
     }
@@ -62,7 +62,7 @@ router.delete('/teacher', authenticate, authorize(User.Role.ADMIN), async (req, 
     }
 
     try {
-        await AdminService.deleteTeacher(accountId, req.jwt.getAccountId());
+        await AdminService.deleteUser(accountId, req.jwt.getAccountId());
         return res.status(200).send({ code: 0 });
     } catch (e) {
         if (e.message === AdminService.errors.USER_NOT_EXIST) {

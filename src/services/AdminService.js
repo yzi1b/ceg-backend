@@ -40,7 +40,7 @@ const AdminService = {
         return user;
     },
 
-    deleteTeacher: async function(accountId, adminId) {
+    deleteUser: async function(accountId, adminId, targetRole) {
         if (accountId === adminId) {
             throw new Error(AdminService.errors.CANNOT_DELETE_SELF);
         }
@@ -49,13 +49,21 @@ const AdminService = {
         if (!user) {
             throw new Error(AdminService.errors.USER_NOT_EXIST);
         }
-        if (user.role !== User.Role.TEACHER) {
+
+        const role = targetRole || user.role;
+
+        if (role === User.Role.ADMIN) {
             throw new Error(AdminService.errors.NOT_TEACHER);
         }
 
-        const courses = await db('courses').where('owner', user.id);
-        for (const course of courses) {
-            await CourseTable.dropCourse(course.id);
+        if (role === User.Role.TEACHER) {
+            const courses = await db('courses').where('owner', user.id);
+            for (const course of courses) {
+                await CourseTable.dropCourse(course.id);
+            }
+        } else {
+            await db('course_members').where('student_id', user.id).del();
+            await db('submissions').where('student_id', user.id).del();
         }
 
         await UserTable.dropUser(user.id);
